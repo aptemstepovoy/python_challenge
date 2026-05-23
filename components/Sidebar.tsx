@@ -33,7 +33,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-border bg-panel px-5 py-6 md:flex">
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between self-start border-r border-border bg-panel px-5 py-6 md:flex">
       <div>
         <div className="display mb-1 text-lg text-accent-bright text-glow tracking-[0.18em]">
           OPERATOR

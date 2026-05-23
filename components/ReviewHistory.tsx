@@ -16,7 +16,7 @@ export function ReviewHistory() {
 
   if (reviews.length === 0) {
     return (
-      <div className="rounded border border-border bg-surface p-6 text-sm text-muted">
+      <div className="panel rounded-md p-6 text-base text-secondary">
         Ревью пока нет. Начни первое.
       </div>
     );
@@ -28,44 +28,44 @@ export function ReviewHistory() {
         <AccordionItem key={r.id} value={r.id}>
           <AccordionTrigger>
             <div className="flex w-full items-center gap-4 pr-3 md:pr-4">
-              <span className="num shrink-0 text-xs text-foreground">
+              <span className="num shrink-0 text-base text-foreground">
                 {formatDateRu(r.date)}
               </span>
               <span className="flex-1" />
-              <div className="hidden shrink-0 gap-4 font-mono text-[10px] uppercase tracking-wider text-muted md:flex">
+              <div className="hidden shrink-0 gap-5 font-mono text-xs uppercase tracking-wider text-secondary md:flex">
                 <span>
-                  Вес <span className="num text-foreground">{numOrDash(r.weight_kg)}</span>
+                  Вес <span className="num text-foreground text-sm">{numOrDash(r.weight_kg)}</span>
                 </span>
                 <span>
-                  Постов <span className="num text-foreground">{numOrDash(r.posts_published)}</span>
+                  Постов <span className="num text-foreground text-sm">{numOrDash(r.posts_published)}</span>
                 </span>
                 <span>
-                  Apps <span className="num text-foreground">{numOrDash(r.applications_sent)}</span>
+                  Apps <span className="num text-foreground text-sm">{numOrDash(r.applications_sent)}</span>
                 </span>
                 <span>
-                  EN ч <span className="num text-foreground">{numOrDash(r.english_hours)}</span>
+                  EN ч <span className="num text-foreground text-sm">{numOrDash(r.english_hours)}</span>
                 </span>
               </div>
-              <span className="num text-[10px] uppercase tracking-wider text-muted md:hidden">
-                Вес <span className="text-foreground">{numOrDash(r.weight_kg)}</span>
+              <span className="num text-xs uppercase tracking-wider text-secondary md:hidden">
+                Вес <span className="text-foreground text-sm">{numOrDash(r.weight_kg)}</span>
               </span>
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
               <div>
-                <div className="font-mono text-xs uppercase tracking-wider text-muted mb-1">
+                <div className="font-mono text-sm uppercase tracking-wider text-secondary mb-2">
                   Блокеры
                 </div>
-                <div className="whitespace-pre-line text-sm text-foreground">
+                <div className="whitespace-pre-line text-base text-foreground">
                   {r.blockers || "—"}
                 </div>
               </div>
               <div>
-                <div className="font-mono text-xs uppercase tracking-wider text-muted mb-1">
+                <div className="font-mono text-sm uppercase tracking-wider text-secondary mb-2">
                   Что было хорошо
                 </div>
-                <div className="whitespace-pre-line text-sm text-foreground">
+                <div className="whitespace-pre-line text-base text-foreground">
                   {r.wins || "—"}
                 </div>
               </div>

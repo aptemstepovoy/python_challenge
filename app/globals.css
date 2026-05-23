@@ -35,9 +35,13 @@
   .font-mono {
     font-weight: 500;
   }
-  /* Bigger muted label legibility */
+  /* Brighter muted for readability on dark bg */
   .text-muted {
-    color: #a39bb8;
+    color: #b8b1cc;
+  }
+  /* Even brighter subtle "secondary" text */
+  .text-secondary {
+    color: #d4cce5;
   }
 }
 
