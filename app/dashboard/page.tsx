@@ -26,10 +26,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-10 space-y-8">
-      <header className="flex items-baseline justify-between border-b border-border pb-6">
+    <div className="p-4 space-y-6 md:p-10 md:space-y-8">
+      <header className="flex flex-col gap-2 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between md:pb-6">
         <div>
-          <h1 className="font-mono text-2xl tracking-wider text-foreground">
+          <h1 className="font-mono text-xl tracking-wider text-foreground md:text-2xl">
             К свободе через систему
           </h1>
           <p className="mt-1 text-sm text-muted">
@@ -78,7 +78,7 @@ export default function DashboardPage() {
             <CardTitle>Mini-stats</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 md:gap-4">
               {[
                 { label: "Всего", value: stats.total, tone: "text-foreground" },
                 { label: "Сделано", value: stats.done, tone: "text-ok" },

@@ -78,11 +78,15 @@ export function TaskItem({ task }: { task: Task }) {
             {task.title}
           </span>
         </button>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="num text-xs text-muted">
+        <div className="flex shrink-0 items-center gap-2 md:gap-3">
+          <span className="num text-[11px] text-muted md:text-xs">
             {formatDateRu(task.deadline)}
           </span>
-          {!done && <Badge tone={toneByCat[cat]}>{cat === "overdue" ? "Просрочено" : cat === "week" ? "Неделя" : cat === "month" ? "Месяц" : "Позже"}</Badge>}
+          {!done && (
+            <Badge tone={toneByCat[cat]} className="hidden sm:inline-flex">
+              {cat === "overdue" ? "Просрочено" : cat === "week" ? "Неделя" : cat === "month" ? "Месяц" : "Позже"}
+            </Badge>
+          )}
           <Badge tone={STATUS_TONE[task.status]}>{STATUS_LABEL[task.status]}</Badge>
         </div>
       </div>

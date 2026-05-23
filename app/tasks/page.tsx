@@ -50,9 +50,9 @@ export default function TasksPage() {
   }, [filter, filteredTasks, steps]);
 
   return (
-    <div className="p-10 space-y-6">
-      <header className="border-b border-border pb-6">
-        <h1 className="font-mono text-2xl tracking-wider text-foreground">
+    <div className="p-4 space-y-5 md:p-10 md:space-y-6">
+      <header className="border-b border-border pb-5 md:pb-6">
+        <h1 className="font-mono text-xl tracking-wider text-foreground md:text-2xl">
           Задачи плана
         </h1>
         <p className="mt-1 text-sm text-muted">

@@ -36,16 +36,16 @@ export default function ReviewPage() {
   }, [reviews]);
 
   return (
-    <div className="p-10 space-y-6">
-      <header className="flex items-baseline justify-between border-b border-border pb-6">
+    <div className="p-4 space-y-5 md:p-10 md:space-y-6">
+      <header className="flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between md:pb-6">
         <div>
-          <h1 className="font-mono text-2xl tracking-wider text-foreground">
+          <h1 className="font-mono text-xl tracking-wider text-foreground md:text-2xl">
             Weekly review
           </h1>
           <p className="mt-1 text-sm text-muted">Воскресенье · 19:00</p>
         </div>
         {!showForm && (
-          <Button onClick={() => setShowForm(true)}>Начать ревью</Button>
+          <Button onClick={() => setShowForm(true)} className="self-start md:self-auto">Начать ревью</Button>
         )}
       </header>
 
@@ -69,7 +69,7 @@ export default function ReviewPage() {
           <h3 className="mb-4 font-mono text-sm uppercase tracking-wider text-muted">
             Метрики
           </h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4">
             <div className="rounded border border-border bg-surface-2 p-4">
               <div className="font-mono text-[10px] uppercase tracking-wider text-muted">
                 Всего ревью

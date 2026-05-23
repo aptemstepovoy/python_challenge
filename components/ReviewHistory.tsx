@@ -27,12 +27,12 @@ export function ReviewHistory() {
       {reviews.map((r) => (
         <AccordionItem key={r.id} value={r.id}>
           <AccordionTrigger>
-            <div className="flex w-full items-center gap-4 pr-4">
+            <div className="flex w-full items-center gap-4 pr-3 md:pr-4">
               <span className="num shrink-0 text-xs text-foreground">
                 {formatDateRu(r.date)}
               </span>
               <span className="flex-1" />
-              <div className="flex shrink-0 gap-4 font-mono text-[10px] uppercase tracking-wider text-muted">
+              <div className="hidden shrink-0 gap-4 font-mono text-[10px] uppercase tracking-wider text-muted md:flex">
                 <span>
                   Вес <span className="num text-foreground">{numOrDash(r.weight_kg)}</span>
                 </span>
@@ -46,10 +46,13 @@ export function ReviewHistory() {
                   EN ч <span className="num text-foreground">{numOrDash(r.english_hours)}</span>
                 </span>
               </div>
+              <span className="num text-[10px] uppercase tracking-wider text-muted md:hidden">
+                Вес <span className="text-foreground">{numOrDash(r.weight_kg)}</span>
+              </span>
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
               <div>
                 <div className="font-mono text-xs uppercase tracking-wider text-muted mb-1">
                   Блокеры

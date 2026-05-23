@@ -38,7 +38,7 @@ export function DeadlinesList() {
         return (
           <li
             key={t.id}
-            className="flex items-center justify-between gap-3 rounded border border-border bg-surface-2 px-4 py-3"
+            className="flex flex-col gap-2 rounded border border-border bg-surface-2 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-3"
           >
             <div className="flex min-w-0 items-baseline gap-3">
               <span className="num shrink-0 text-xs text-muted">{t.id}</span>

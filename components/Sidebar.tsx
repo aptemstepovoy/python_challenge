@@ -22,7 +22,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col justify-between border-r border-border bg-surface px-5 py-6">
+    <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-border bg-surface px-5 py-6 md:flex">
       <div>
         <div className="mb-1 font-mono text-lg tracking-[0.2em] text-foreground">
           OPERATOR

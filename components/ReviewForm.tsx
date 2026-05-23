@@ -46,11 +46,11 @@ export function ReviewForm({ onSubmitted }: { onSubmitted?: () => void }) {
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-5 md:p-6">
       <h3 className="mb-5 font-mono text-sm uppercase tracking-wider text-foreground">
         Новое ревью
       </h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Дата</Label>
           <Input

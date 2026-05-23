@@ -79,8 +79,8 @@ export function KGICard({ kgi }: { kgi: KGI }) {
       }}
     >
       <DialogTrigger asChild>
-        <Card className="cursor-pointer p-6 hover:border-accent-dim transition-colors">
-          <div className="mb-4 flex items-baseline justify-between">
+        <Card className="cursor-pointer p-5 hover:border-accent-dim transition-colors md:p-6">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <div className="font-mono text-xs uppercase tracking-wider text-muted">
               {kgi.name}
             </div>
@@ -97,7 +97,7 @@ export function KGICard({ kgi }: { kgi: KGI }) {
 
           <Progress value={actualPct} tone={tone} className="mb-3" />
 
-          <div className="flex justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
+          <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-muted">
             <span>
               Старт: <span className="text-foreground/70">{kgi.start_value}</span>
             </span>

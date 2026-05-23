@@ -109,13 +109,13 @@ export function StepAccordion({
   return (
     <AccordionItem value={step.id}>
       <AccordionTrigger>
-        <div className="flex w-full items-center gap-4 pr-4">
+        <div className="flex w-full items-center gap-3 pr-3 md:gap-4 md:pr-4">
           <span className="num w-12 shrink-0 text-xs text-muted">{step.id}</span>
-          <span className="flex-1 text-sm text-foreground">{step.title}</span>
+          <span className="flex-1 truncate text-sm text-foreground text-left">{step.title}</span>
           <span className="num shrink-0 text-xs text-muted">
             {done} / {total}
           </span>
-          <div className="w-24 shrink-0">
+          <div className="hidden w-24 shrink-0 md:block">
             <Progress value={pct} tone="accent" />
           </div>
         </div>
