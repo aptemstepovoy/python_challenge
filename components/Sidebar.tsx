@@ -16,6 +16,7 @@ const items = [
   { href: "/tasks", label: "Задачи" },
   { href: "/bosses", label: "Боссы" },
   { href: "/achievements", label: "Достижения" },
+  { href: "/journal", label: "Дневник" },
   { href: "/review", label: "Ревью" },
 ];
 

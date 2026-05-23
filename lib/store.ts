@@ -5,6 +5,7 @@ import { persist } from "zustand/middleware";
 import type {
   AchievementId,
   AchievementSnapshot,
+  DailyJournal,
   Habit,
   HabitLog,
   KGI,
@@ -35,6 +36,7 @@ type State = {
   lastIntroDate: string | null;
   snoozesUsedDate: string | null;
   snoozesUsedCount: number;
+  journals: DailyJournal[];
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -61,6 +63,9 @@ type State = {
   addXP: (amount: number) => void;
   unlockAchievement: (id: AchievementId) => void;
   markIntroSeen: () => void;
+  addJournal: (journal: Omit<DailyJournal, "id" | "created_at">) => void;
+  updateJournal: (id: string, patch: Partial<DailyJournal>) => void;
+  deleteJournal: (id: string) => void;
   resetData: () => void;
 };
 
@@ -89,6 +94,7 @@ export const useStore = create<State>()(
       lastIntroDate: null,
       snoozesUsedDate: null,
       snoozesUsedCount: 0,
+      journals: [],
 
       setKGI: (id, current_value) =>
         set((s) => ({
@@ -325,6 +331,27 @@ export const useStore = create<State>()(
 
       markIntroSeen: () => set({ lastIntroDate: todayISO() }),
 
+      addJournal: (j) =>
+        set((s) => ({
+          journals: [
+            { ...j, id: uuid(), created_at: nowISO() },
+            ...s.journals,
+          ],
+          xp: s.xp + 30,
+        })),
+
+      updateJournal: (id, patch) =>
+        set((s) => ({
+          journals: s.journals.map((j) =>
+            j.id === id ? { ...j, ...patch } : j
+          ),
+        })),
+
+      deleteJournal: (id) =>
+        set((s) => ({
+          journals: s.journals.filter((j) => j.id !== id),
+        })),
+
       resetData: () =>
         set({
           kgis: initialKGIs,
@@ -339,11 +366,12 @@ export const useStore = create<State>()(
           lastIntroDate: null,
           snoozesUsedDate: null,
           snoozesUsedCount: 0,
+          journals: [],
         }),
     }),
     {
-      name: "operator-store-v5",
-      version: 5,
+      name: "operator-store-v6",
+      version: 6,
     }
   )
 );

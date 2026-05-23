@@ -134,18 +134,18 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
       </div>
 
       <div className="mt-auto pt-3 space-y-2">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 lg:flex-row">
           <Button
             onClick={onStart}
             variant="outline"
             size="sm"
-            className={cn("flex-1", pulse && !started && "animate-pulse-glow")}
+            className={cn("w-full lg:flex-1", pulse && !started && "animate-pulse-glow")}
             disabled={started}
           >
             <Play className="mr-1.5 h-3.5 w-3.5" />
             {started ? "В работе" : "Начать"}
           </Button>
-          <Button onClick={onDone} size="sm" className="flex-1">
+          <Button onClick={onDone} size="sm" className="w-full lg:flex-1">
             <Check className="mr-1.5 h-3.5 w-3.5" />
             Сделано
           </Button>

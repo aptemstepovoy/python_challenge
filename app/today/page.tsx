@@ -6,7 +6,6 @@ import { CharacterCard } from "@/components/CharacterCard";
 import { TodaySummary } from "@/components/TodaySummary";
 import { TodayCombined } from "@/components/TodayCombined";
 import { MainTaskCard } from "@/components/MainTaskCard";
-import { PrioritiesList } from "@/components/PrioritiesList";
 import { daysSinceStart } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -64,12 +63,11 @@ export default function TodayPage() {
         <MainTaskCard compact />
       </div>
 
-      <PrioritiesList />
-
       <nav className="flex flex-wrap gap-4 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider text-muted">
         <a href="/dashboard" className="hover:text-accent-bright">→ Обзор</a>
         <a href="/achievements" className="hover:text-accent-bright">→ Достижения</a>
         <a href="/bosses" className="hover:text-accent-bright">→ Боссы</a>
+        <a href="/journal" className="hover:text-accent-bright">→ Дневник</a>
         <a href="/review" className="hover:text-accent-bright">→ Ревью</a>
       </nav>
     </div>

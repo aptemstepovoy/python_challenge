@@ -71,7 +71,7 @@ export function TodayCombined() {
             {ratio.done} / {ratio.total}
           </span>
         </div>
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
           {daily.map((h) => {
             const done = !!logForToday(habitLogs, h.id, todayISO);
             return (
@@ -82,24 +82,32 @@ export function TodayCombined() {
                   toggleHabit(h.id);
                 }}
                 aria-label={h.name}
-                className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
+                className={cn(
+                  "flex items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors active:scale-[0.98]",
+                  done
+                    ? "border-transparent"
+                    : "border-border bg-surface-2/30 hover:border-accent-dim"
+                )}
+                style={
+                  done
+                    ? { background: `${h.color}25`, borderColor: `${h.color}80` }
+                    : undefined
+                }
               >
                 <span
-                  className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full border-2"
-                  )}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2"
                   style={{
                     background: done ? h.color : "transparent",
                     borderColor: done ? "transparent" : `${h.color}80`,
                     color: done ? "#0a0814" : h.color,
                   }}
                 >
-                  <Icon name={h.icon} className="h-3.5 w-3.5" strokeWidth={done ? 2.5 : 2} />
+                  <Icon name={h.icon} className="h-3 w-3" strokeWidth={done ? 2.5 : 2} />
                 </span>
                 <span
                   className={cn(
-                    "text-[10px] leading-tight text-center truncate w-full",
-                    done ? "text-accent-bright" : "text-secondary"
+                    "text-xs truncate flex-1",
+                    done ? "text-accent-bright" : "text-foreground"
                   )}
                 >
                   {h.name}

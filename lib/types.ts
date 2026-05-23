@@ -56,6 +56,24 @@ export type WeightTarget = {
   weight_kg: number;
 };
 
+export type JournalState =
+  | "great"
+  | "good"
+  | "neutral"
+  | "tired"
+  | "down";
+
+export type DailyJournal = {
+  id: string;
+  date: string;
+  done_today: string;
+  focus_tomorrow: string;
+  state: JournalState;
+  insights: string;
+  reflection: string;
+  created_at: string;
+};
+
 export type HabitFrequency = "daily" | "weekly_n";
 
 export type Habit = {

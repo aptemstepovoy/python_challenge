@@ -1,25 +1,29 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { StepAccordionList } from "@/components/StepAccordion";
 import { Button } from "@/components/ui/button";
 import { TaskItem } from "@/components/TaskItem";
 import { TaskFormDialog } from "@/components/TaskFormDialog";
 import { useStore } from "@/lib/store";
+import { cn, isOverdue } from "@/lib/utils";
 import {
-  cn,
-  isOverdue,
-} from "@/lib/utils";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+  addDays,
+  differenceInCalendarDays,
+  endOfMonth,
+  endOfWeek,
+  parseISO,
+} from "date-fns";
 import type { Task } from "@/lib/types";
 import { Plus } from "lucide-react";
 
-type Filter =
-  | "buckets"
-  | "priority"
-  | "by_step"
-  | "overdue"
-  | "all";
+type Filter = "buckets" | "priority" | "by_step" | "overdue" | "all";
 
 const PRIORITY_STEPS = ["S1", "S1.1", "S2", "S2.1", "S3", "S4"];
 
@@ -31,43 +35,88 @@ const filters: { key: Filter; label: string }[] = [
   { key: "all", label: "Все" },
 ];
 
-function Section({
+function Bucket({
+  id,
   title,
   tone,
-  count,
   tasks,
 }: {
+  id: string;
   title: string;
   tone: "danger" | "accent" | "warn" | "muted";
-  count: number;
   tasks: Task[];
 }) {
-  if (count === 0) return null;
   const toneClass =
     tone === "danger"
       ? "text-danger-bright"
       : tone === "accent"
         ? "text-accent-bright"
         : tone === "warn"
-          ? "text-warn"
-          : "text-muted";
+          ? "text-pink-bright"
+          : "text-secondary";
   return (
-    <section className="space-y-2">
-      <div
-        className={cn(
-          "flex items-baseline justify-between font-mono text-[10px] uppercase tracking-[0.2em]",
-          toneClass
+    <AccordionItem value={id}>
+      <AccordionTrigger>
+        <div className="flex w-full items-center gap-4 pr-3">
+          <span
+            className={cn(
+              "font-mono text-sm uppercase tracking-[0.18em]",
+              toneClass
+            )}
+          >
+            ◆ {title}
+          </span>
+          <span className="flex-1" />
+          <span className={cn("num text-sm", toneClass)}>
+            {tasks.length}
+          </span>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent>
+        {tasks.length === 0 ? (
+          <div className="py-3 text-base text-secondary">Задач нет</div>
+        ) : (
+          <div className="space-y-1">
+            {tasks.map((t) => (
+              <TaskItem key={t.id} task={t} />
+            ))}
+          </div>
         )}
-      >
-        <span>◆ {title}</span>
-        <span className="num">{count}</span>
-      </div>
-      <div className="space-y-1">
-        {tasks.map((t) => (
-          <TaskItem key={t.id} task={t} />
-        ))}
-      </div>
-    </section>
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
+
+function PriorityAccordion({
+  title,
+  tasks,
+}: {
+  title: string;
+  tasks: Task[];
+}) {
+  return (
+    <AccordionItem value={`prio-${title}`}>
+      <AccordionTrigger>
+        <div className="flex w-full items-center gap-4 pr-3">
+          <span className="font-mono text-sm uppercase tracking-[0.18em] text-accent-bright">
+            ◆ {title}
+          </span>
+          <span className="flex-1" />
+          <span className="num text-sm text-secondary">{tasks.length}</span>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent>
+        {tasks.length === 0 ? (
+          <div className="py-3 text-base text-secondary">Задач нет</div>
+        ) : (
+          <div className="space-y-1">
+            {tasks.map((t) => (
+              <TaskItem key={t.id} task={t} />
+            ))}
+          </div>
+        )}
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 
@@ -79,71 +128,94 @@ export default function TasksPage() {
 
   const buckets = useMemo(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const todayISO = today.toISOString().slice(0, 10);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowISO = tomorrow.toISOString().slice(0, 10);
+    const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+    const monthEnd = endOfMonth(today);
+    const q3End = addDays(today, 90);
+    const m6End = addDays(today, 180);
+    const yearEnd = addDays(today, 365);
 
     const open = tasks.filter((t) => t.status !== "done");
-    const ov = open
+
+    const overdue = open
       .filter((t) => t.deadline < todayISO)
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
-    const tod = open
+
+    const todayList = open
       .filter((t) => t.deadline === todayISO)
       .sort((a, b) => (b.xp ?? 25) - (a.xp ?? 25));
-    const tom = open
-      .filter((t) => t.deadline === tomorrowISO)
-      .sort((a, b) => (b.xp ?? 25) - (a.xp ?? 25));
+
     const week = open
       .filter((t) => {
         const d = parseISO(t.deadline);
-        const diff = differenceInCalendarDays(d, today);
-        return diff > 1 && diff <= 7;
+        return d > today && d <= weekEnd;
       })
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
+
     const month = open
       .filter((t) => {
         const d = parseISO(t.deadline);
-        const diff = differenceInCalendarDays(d, today);
-        return diff > 7 && diff <= 30;
+        return d > weekEnd && d <= monthEnd;
       })
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
-    const later = open
+
+    const q3 = open
       .filter((t) => {
         const d = parseISO(t.deadline);
-        return differenceInCalendarDays(d, today) > 30;
+        return d > monthEnd && d <= q3End;
       })
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
-    return {
-      overdue: ov,
-      today: tod,
-      tomorrow: tom,
-      week,
-      month,
-      later,
-    };
+    const m6 = open
+      .filter((t) => {
+        const d = parseISO(t.deadline);
+        return d > q3End && d <= m6End;
+      })
+      .sort((a, b) => a.deadline.localeCompare(b.deadline));
+
+    const year = open
+      .filter((t) => {
+        const d = parseISO(t.deadline);
+        return d > m6End && d <= yearEnd;
+      })
+      .sort((a, b) => a.deadline.localeCompare(b.deadline));
+
+    const later = open
+      .filter((t) => parseISO(t.deadline) > yearEnd)
+      .sort((a, b) => a.deadline.localeCompare(b.deadline));
+
+    return { overdue, today: todayList, week, month, q3, m6, year, later };
   }, [tasks]);
 
-  const priority = useMemo(() => {
-    return tasks
-      .filter(
-        (t) => t.status !== "done" && PRIORITY_STEPS.includes(t.step_id)
-      )
-      .sort((a, b) => {
-        const ap = PRIORITY_STEPS.indexOf(a.step_id);
-        const bp = PRIORITY_STEPS.indexOf(b.step_id);
-        if (ap !== bp) return ap - bp;
-        return a.deadline.localeCompare(b.deadline);
-      })
-      .slice(0, 20);
+  const totalOpen =
+    buckets.overdue.length +
+    buckets.today.length +
+    buckets.week.length +
+    buckets.month.length +
+    buckets.q3.length +
+    buckets.m6.length +
+    buckets.year.length +
+    buckets.later.length;
+
+  const priorityByStep = useMemo(() => {
+    const map: Record<string, Task[]> = {};
+    for (const t of tasks) {
+      if (t.status === "done") continue;
+      if (!PRIORITY_STEPS.includes(t.step_id)) continue;
+      (map[t.step_id] ??= []).push(t);
+    }
+    for (const k of Object.keys(map)) {
+      map[k].sort((a, b) => a.deadline.localeCompare(b.deadline));
+    }
+    return map;
   }, [tasks]);
 
   const overdueOnly = useMemo(
     () =>
-      tasks.filter(
-        (t) => t.status !== "done" && isOverdue(t.deadline)
-      ),
+      tasks
+        .filter((t) => t.status !== "done" && isOverdue(t.deadline))
+        .sort((a, b) => a.deadline.localeCompare(b.deadline)),
     [tasks]
   );
 
@@ -171,7 +243,7 @@ export default function TasksPage() {
             variant={filter === f.key ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter(f.key)}
-            className="font-mono uppercase tracking-wider text-[10px]"
+            className="font-mono uppercase tracking-wider text-xs"
           >
             {f.label}
           </Button>
@@ -179,77 +251,111 @@ export default function TasksPage() {
       </div>
 
       {filter === "buckets" && (
-        <div className="space-y-7">
-          <Section
-            title="Просрочено"
-            tone="danger"
-            count={buckets.overdue.length}
-            tasks={buckets.overdue}
-          />
-          <Section
-            title="Сегодня"
-            tone="accent"
-            count={buckets.today.length}
-            tasks={buckets.today}
-          />
-          <Section
-            title="Завтра"
-            tone="warn"
-            count={buckets.tomorrow.length}
-            tasks={buckets.tomorrow}
-          />
-          <Section
-            title="Эта неделя"
-            tone="warn"
-            count={buckets.week.length}
-            tasks={buckets.week}
-          />
-          <Section
-            title="Этот месяц"
-            tone="muted"
-            count={buckets.month.length}
-            tasks={buckets.month}
-          />
-          <Section
-            title="Позже"
-            tone="muted"
-            count={buckets.later.length}
-            tasks={buckets.later}
-          />
-          {buckets.overdue.length === 0 &&
-            buckets.today.length === 0 &&
-            buckets.tomorrow.length === 0 &&
-            buckets.week.length === 0 &&
-            buckets.month.length === 0 &&
-            buckets.later.length === 0 && (
-              <div className="panel corners rounded-md p-6 text-center">
-                <div className="display text-lg text-accent-bright">
-                  Все задачи закрыты
-                </div>
-                <p className="mt-2 text-sm text-muted">
-                  Добавь новых из любого шага ниже или открой /habits
-                </p>
+        <div>
+          {totalOpen === 0 ? (
+            <div className="panel corners rounded-md p-6 text-center">
+              <div className="display text-xl text-accent-bright">
+                Все задачи закрыты
               </div>
-            )}
+              <p className="mt-2 text-base text-secondary">
+                Открой /habits или добавь новую задачу
+              </p>
+            </div>
+          ) : (
+            <Accordion
+              type="multiple"
+              defaultValue={["overdue", "today", "week"]}
+              className="space-y-3"
+            >
+              <Bucket
+                id="overdue"
+                title="Просрочено"
+                tone="danger"
+                tasks={buckets.overdue}
+              />
+              <Bucket
+                id="today"
+                title="Сегодня"
+                tone="accent"
+                tasks={buckets.today}
+              />
+              <Bucket
+                id="week"
+                title="Эта неделя"
+                tone="warn"
+                tasks={buckets.week}
+              />
+              <Bucket
+                id="month"
+                title="Этот месяц"
+                tone="muted"
+                tasks={buckets.month}
+              />
+              <Bucket
+                id="q3"
+                title="3 месяца"
+                tone="muted"
+                tasks={buckets.q3}
+              />
+              <Bucket
+                id="m6"
+                title="6 месяцев"
+                tone="muted"
+                tasks={buckets.m6}
+              />
+              <Bucket
+                id="year"
+                title="Год"
+                tone="muted"
+                tasks={buckets.year}
+              />
+              {buckets.later.length > 0 && (
+                <Bucket
+                  id="later"
+                  title="Позже года"
+                  tone="muted"
+                  tasks={buckets.later}
+                />
+              )}
+            </Accordion>
+          )}
         </div>
       )}
 
       {filter === "priority" && (
-        <Section
-          title="Приоритетные шаги (цели года)"
-          tone="accent"
-          count={priority.length}
-          tasks={priority}
-        />
+        <Accordion
+          type="multiple"
+          defaultValue={PRIORITY_STEPS.slice(0, 3)}
+          className="space-y-3"
+        >
+          {PRIORITY_STEPS.map((sid) => {
+            const step = steps.find((s) => s.id === sid);
+            if (!step) return null;
+            const list = priorityByStep[sid] ?? [];
+            return (
+              <PriorityAccordion
+                key={sid}
+                title={`${sid} — ${step.title}`}
+                tasks={list}
+              />
+            );
+          })}
+        </Accordion>
       )}
 
       {filter === "overdue" && (
-        <Section
-          title="Просрочено"
-          tone="danger"
-          count={overdueOnly.length}
-          tasks={overdueOnly}
-        />
+        <Accordion
+          type="multiple"
+          defaultValue={["overdue"]}
+          className="space-y-3"
+        >
+          <Bucket
+            id="overdue"
+            title="Просрочено"
+            tone="danger"
+            tasks={overdueOnly}
+          />
+        </Accordion>
       )}
 
       {filter === "all" && <StepAccordionList steps={steps} tasks={tasks} />}
