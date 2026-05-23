@@ -22,6 +22,7 @@ import {
   progressToTarget,
 } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { CountUp } from "@/components/CountUp";
 
 function pickTarget(kgi: KGI, today: Date) {
   const novDate = new Date(TARGET_NOV);
@@ -92,7 +93,14 @@ export function KGICard({ kgi }: { kgi: KGI }) {
           </div>
 
           <div className="mb-4 num text-3xl text-foreground">
-            {kgi.current_value}
+            {typeof kgi.current_value === "number" ? (
+              <CountUp
+                value={kgi.current_value}
+                decimals={Number.isInteger(kgi.current_value) ? 0 : 1}
+              />
+            ) : (
+              kgi.current_value
+            )}
           </div>
 
           <Progress value={actualPct} tone={tone} className="mb-3" />

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { cn, daysSinceStart, formatWeekday } from "@/lib/utils";
 
 const items = [
+  { href: "/today", label: "Today" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/tasks", label: "Tasks" },
   { href: "/review", label: "Review" },

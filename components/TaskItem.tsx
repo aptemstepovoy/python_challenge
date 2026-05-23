@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn, deadlineCategory, formatDateRu } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { haptic } from "@/lib/haptics";
 import type { Status, Task } from "@/lib/types";
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -61,7 +62,11 @@ export function TaskItem({ task }: { task: Task }) {
       >
         <Checkbox
           checked={done}
-          onCheckedChange={() => cycle(task.id)}
+          onCheckedChange={() => {
+            const next = task.status === "in_progress" ? "success" : "tap";
+            haptic(next);
+            cycle(task.id);
+          }}
           aria-label="toggle status"
         />
         <button

@@ -6,6 +6,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
+import { haptic } from "@/lib/haptics";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -27,6 +28,7 @@ export function ReviewForm({ onSubmitted }: { onSubmitted?: () => void }) {
   };
 
   const submit = () => {
+    haptic("success");
     addReview({
       date,
       weight_kg: parseNum(weight),
