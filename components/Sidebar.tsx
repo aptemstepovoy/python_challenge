@@ -4,17 +4,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn, daysSinceStart, formatWeekday } from "@/lib/utils";
+import { useStore } from "@/lib/store";
+import { levelFromXP, progressWithinLevel } from "@/lib/xp";
+import { CountUp } from "@/components/CountUp";
+import { Progress } from "@/components/ui/progress";
 
 const items = [
   { href: "/today", label: "Today" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/habits", label: "Habits" },
   { href: "/tasks", label: "Tasks" },
+  { href: "/bosses", label: "Bosses" },
+  { href: "/achievements", label: "Achievements" },
   { href: "/review", label: "Review" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [now, setNow] = useState<Date | null>(null);
+  const xp = useStore((s) => s.xp);
+  const lvl = levelFromXP(xp);
+  const lvlPct = progressWithinLevel(xp);
 
   useEffect(() => {
     setNow(new Date());
@@ -53,16 +63,27 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="border-t border-border pt-4 text-xs text-muted">
+      <div className="space-y-3 border-t border-border pt-4 text-xs text-muted">
+        <div className="space-y-1.5">
+          <div className="flex items-baseline justify-between">
+            <span className="font-mono uppercase tracking-wider">
+              L{lvl.num} · {lvl.title}
+            </span>
+            <span className="num text-foreground">
+              <CountUp value={xp} duration={500} /> XP
+            </span>
+          </div>
+          <Progress value={lvlPct} tone="accent" />
+        </div>
         {now ? (
-          <>
+          <div>
             <div className="font-mono uppercase tracking-wider">
               {formatWeekday(now)}
             </div>
             <div className="mt-1 num text-foreground">
               День {daysSinceStart(now)} / 365
             </div>
-          </>
+          </div>
         ) : (
           <div className="font-mono uppercase tracking-wider opacity-0">.</div>
         )}

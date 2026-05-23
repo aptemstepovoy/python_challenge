@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/today", label: "Today" },
-  { href: "/dashboard", label: "KGI" },
+  { href: "/habits", label: "Habits" },
   { href: "/tasks", label: "Tasks" },
+  { href: "/bosses", label: "Bosses" },
   { href: "/review", label: "Review" },
 ];
 
@@ -23,7 +24,7 @@ export function BottomTabBar() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex-1 py-3 text-center font-mono text-[11px] uppercase tracking-wider transition-colors",
+              "flex-1 py-3 text-center font-mono text-[10px] uppercase tracking-wider transition-colors",
               active
                 ? "text-accent border-t-2 border-accent -mt-px"
                 : "text-muted"

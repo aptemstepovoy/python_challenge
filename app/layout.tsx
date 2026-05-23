@@ -5,6 +5,7 @@ import { BottomTabBar } from "@/components/BottomTabBar";
 import { MobileTopBar } from "@/components/MobileTopBar";
 import { QuickCapture } from "@/components/QuickCapture";
 import { PWARegister } from "@/components/PWARegister";
+import { DailyIntro } from "@/components/DailyIntro";
 import "./globals.css";
 
 const inter = Inter({
@@ -63,6 +64,7 @@ export default function RootLayout({
         </div>
         <QuickCapture />
         <PWARegister />
+        <DailyIntro />
       </body>
     </html>
   );

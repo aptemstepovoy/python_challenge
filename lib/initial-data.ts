@@ -1,4 +1,4 @@
-import type { KGI, Step, Task, WeightTarget } from "./types";
+import type { Boss, Habit, KGI, Step, Task, WeightTarget } from "./types";
 
 export const initialKGIs: KGI[] = [
   {
@@ -206,7 +206,22 @@ export const initialTasks: Task[] = [
 
   // S5 — Выход из найма (placeholder)
   todo("S5.1", "S5", "Решение о выходе", "2027-05-23", "2027-05-23", "Принято решение на основе результатов S4"),
-];
+].map((t) => {
+  const sid = t.step_id;
+  let linked_boss: string | undefined;
+  let xp = 25;
+  if (sid === "S1" || sid === "S1.1" || sid === "S1.2") {
+    linked_boss = "naym";
+    xp = sid === "S1" ? 50 : 25;
+  } else if (sid === "S3") {
+    linked_boss = "bali";
+    xp = 50;
+  } else if (sid === "S4") {
+    linked_boss = "product";
+    xp = 75;
+  }
+  return { ...t, xp, linked_boss };
+});
 
 export const weightTargets: WeightTarget[] = [
   { date: "2026-05-23", weight_kg: 110 },
@@ -222,4 +237,161 @@ export const weightTargets: WeightTarget[] = [
   { date: "2027-03-23", weight_kg: 95 },
   { date: "2027-04-23", weight_kg: 93.5 },
   { date: "2027-05-23", weight_kg: 92 },
+];
+
+export const initialHabits: Habit[] = [
+  {
+    id: "h1",
+    name: "Контент",
+    icon: "PenLine",
+    description: "Один пост или пара заметок в день",
+    frequency: "daily",
+    target_per_week: 7,
+    xp_per_completion: 15,
+    linked_kgi: "subscribers",
+    linked_boss: "product",
+    color: "#d4a574",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+  {
+    id: "h2",
+    name: "Английский",
+    icon: "Languages",
+    description: "Минимум 30 минут практики",
+    frequency: "daily",
+    target_per_week: 7,
+    xp_per_completion: 15,
+    linked_kgi: "english",
+    color: "#7cc4d8",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+  {
+    id: "h3",
+    name: "Тренировка",
+    icon: "Dumbbell",
+    description: "Силовая или функциональная",
+    frequency: "weekly_n",
+    target_per_week: 3,
+    xp_per_completion: 40,
+    linked_kgi: "weight",
+    linked_boss: "telo",
+    color: "#d87c7c",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+  {
+    id: "h4",
+    name: "Взвешивание",
+    icon: "Scale",
+    description: "Раз в неделю — в одно и то же время",
+    frequency: "weekly_n",
+    target_per_week: 1,
+    xp_per_completion: 50,
+    linked_kgi: "weight",
+    linked_boss: "telo",
+    color: "#5fd97a",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+  {
+    id: "h5",
+    name: "Outreach",
+    icon: "Send",
+    description: "Сообщения и отклики, 5 в неделю",
+    frequency: "weekly_n",
+    target_per_week: 5,
+    xp_per_completion: 20,
+    linked_kgi: "income",
+    linked_boss: "naym",
+    color: "#9d7cd8",
+    created_at: "2026-05-23",
+    archived: false,
+    active_until: "2026-07-23",
+  },
+  {
+    id: "h6",
+    name: "10к шагов",
+    icon: "Footprints",
+    description: "Часы на ногах",
+    frequency: "daily",
+    target_per_week: 7,
+    xp_per_completion: 10,
+    linked_kgi: "weight",
+    linked_boss: "telo",
+    color: "#5fd97a",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+  {
+    id: "h7",
+    name: "Чтение",
+    icon: "BookOpen",
+    description: "Минимум 20 минут — книги, доки",
+    frequency: "daily",
+    target_per_week: 7,
+    xp_per_completion: 10,
+    color: "#a0a0a0",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+  {
+    id: "h8",
+    name: "Без сахара",
+    icon: "Ban",
+    description: "День без добавленного сахара",
+    frequency: "daily",
+    target_per_week: 7,
+    xp_per_completion: 15,
+    linked_kgi: "weight",
+    linked_boss: "telo",
+    color: "#d87c7c",
+    created_at: "2026-05-23",
+    archived: false,
+  },
+];
+
+export const initialBosses: Boss[] = [
+  {
+    id: "naym",
+    name: "Найм",
+    description: "Сменить работу на более доходную",
+    total_hp: 400,
+    reward_xp: 500,
+    start_date: "2026-05-25",
+    target_date: "2026-07-23",
+    damage_per_habit: 20,
+  },
+  {
+    id: "telo",
+    name: "Тело",
+    description: "С 110 кг до 92 кг и обратно к форме",
+    total_hp: 600,
+    reward_xp: 600,
+    start_date: "2026-05-23",
+    target_date: "2027-05-23",
+    damage_per_habit: 15,
+  },
+  {
+    id: "bali",
+    name: "Бали",
+    description: "Переезд всей семьёй на Бали",
+    total_hp: 350,
+    reward_xp: 700,
+    start_date: "2026-06-01",
+    target_date: "2026-11-23",
+    damage_per_habit: 0,
+  },
+  {
+    id: "product",
+    name: "Продукт",
+    description: "От гипотез к 2–3 платящим клиентам",
+    total_hp: 375,
+    reward_xp: 1000,
+    start_date: "2026-12-01",
+    target_date: "2027-05-23",
+    damage_per_habit: 10,
+    unlocks_after: "naym",
+  },
 ];

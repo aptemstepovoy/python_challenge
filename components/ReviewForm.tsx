@@ -1,23 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { haptic } from "@/lib/haptics";
+import { logsInWeek } from "@/lib/habits-logic";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export function ReviewForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const addReview = useStore((s) => s.addReview);
+  const habits = useStore((s) => s.habits);
+  const habitLogs = useStore((s) => s.habitLogs);
+  const reviews = useStore((s) => s.reviews);
+  const weightEntries = useStore((s) => s.weightEntries);
+
+  const defaults = useMemo(() => {
+    const last = reviews[0];
+    const lastWeight = weightEntries[weightEntries.length - 1];
+    const content = habits.find((h) => h.name === "Контент");
+    const english = habits.find((h) => h.name === "Английский");
+    const outreach = habits.find((h) => h.name === "Outreach");
+
+    const postsAuto = content
+      ? logsInWeek(habitLogs, content.id).length
+      : 0;
+    const engHoursAuto = english
+      ? Math.round(logsInWeek(habitLogs, english.id).length * 0.5 * 10) / 10
+      : 0;
+    const appsAuto = outreach
+      ? logsInWeek(habitLogs, outreach.id).length
+      : 0;
+
+    return {
+      weight: lastWeight ? String(lastWeight.weight_kg) : "",
+      posts: postsAuto > 0 ? String(postsAuto) : last?.posts_published != null ? String(last.posts_published) : "",
+      apps: appsAuto > 0 ? String(appsAuto) : last?.applications_sent != null ? String(last.applications_sent) : "",
+      english: engHoursAuto > 0 ? String(engHoursAuto) : last?.english_hours != null ? String(last.english_hours) : "",
+    };
+  }, [reviews, habits, habitLogs, weightEntries]);
 
   const [date, setDate] = useState(todayISO());
-  const [weight, setWeight] = useState("");
-  const [posts, setPosts] = useState("");
-  const [apps, setApps] = useState("");
-  const [english, setEnglish] = useState("");
+  const [weight, setWeight] = useState(defaults.weight);
+  const [posts, setPosts] = useState(defaults.posts);
+  const [apps, setApps] = useState(defaults.apps);
+  const [english, setEnglish] = useState(defaults.english);
   const [blockers, setBlockers] = useState("");
   const [wins, setWins] = useState("");
 
@@ -49,9 +79,12 @@ export function ReviewForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
   return (
     <Card className="p-5 md:p-6">
-      <h3 className="mb-5 font-mono text-sm uppercase tracking-wider text-foreground">
+      <h3 className="mb-2 font-mono text-sm uppercase tracking-wider text-foreground">
         Новое ревью
       </h3>
+      <p className="mb-5 text-[11px] text-muted">
+        Поля предзаполнены из логов привычек и прошлого ревью — поправь если нужно
+      </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Дата</Label>
