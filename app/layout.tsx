@@ -6,6 +6,8 @@ import { MobileTopBar } from "@/components/MobileTopBar";
 import { QuickCapture } from "@/components/QuickCapture";
 import { PWARegister } from "@/components/PWARegister";
 import { DailyIntro } from "@/components/DailyIntro";
+import { AchievementToast } from "@/components/AchievementToast";
+import { FocusTimer } from "@/components/FocusTimer";
 import "./globals.css";
 
 const inter = Inter({
@@ -72,6 +74,8 @@ export default function RootLayout({
         <QuickCapture />
         <PWARegister />
         <DailyIntro />
+        <AchievementToast />
+        <FocusTimer />
       </body>
     </html>
   );

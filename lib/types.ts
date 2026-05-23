@@ -33,6 +33,7 @@ export type Task = {
   snoozed_until?: string;
   started_at?: string;
   completed_at?: string;
+  time_spent_sec?: number;
 };
 
 export type WeeklyReview = {
@@ -56,19 +57,14 @@ export type WeightTarget = {
   weight_kg: number;
 };
 
-export type JournalState =
-  | "great"
-  | "good"
-  | "neutral"
-  | "tired"
-  | "down";
+export type JournalState = string;
 
 export type DailyJournal = {
   id: string;
   date: string;
   done_today: string;
   focus_tomorrow: string;
-  state: JournalState;
+  state: string;
   insights: string;
   reflection: string;
   created_at: string;

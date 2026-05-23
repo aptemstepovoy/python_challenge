@@ -18,6 +18,8 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
   const startTask = useStore((s) => s.startTask);
   const completeTask = useStore((s) => s.completeTask);
   const snoozeTask = useStore((s) => s.snoozeTask);
+  const startTimer = useStore((s) => s.startTimer);
+  const stopTimer = useStore((s) => s.stopTimer);
   const snoozesUsedDate = useStore((s) => s.snoozesUsedDate);
   const snoozesUsedCount = useStore((s) => s.snoozesUsedCount);
 
@@ -82,9 +84,11 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
   const onStart = () => {
     haptic("tap");
     startTask(task.id);
+    startTimer(task.id);
   };
   const onDone = () => {
     haptic("success");
+    stopTimer();
     completeTask(task.id);
     setJustDone(true);
     setTimeout(() => setJustDone(false), 900);

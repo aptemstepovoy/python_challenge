@@ -37,6 +37,8 @@ type State = {
   snoozesUsedDate: string | null;
   snoozesUsedCount: number;
   journals: DailyJournal[];
+  activeTimerTaskId: string | null;
+  activeTimerStartedAt: string | null;
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -66,6 +68,8 @@ type State = {
   addJournal: (journal: Omit<DailyJournal, "id" | "created_at">) => void;
   updateJournal: (id: string, patch: Partial<DailyJournal>) => void;
   deleteJournal: (id: string) => void;
+  startTimer: (task_id: string) => void;
+  stopTimer: () => void;
   resetData: () => void;
 };
 
@@ -95,6 +99,8 @@ export const useStore = create<State>()(
       snoozesUsedDate: null,
       snoozesUsedCount: 0,
       journals: [],
+      activeTimerTaskId: null,
+      activeTimerStartedAt: null,
 
       setKGI: (id, current_value) =>
         set((s) => ({
@@ -352,6 +358,34 @@ export const useStore = create<State>()(
           journals: s.journals.filter((j) => j.id !== id),
         })),
 
+      startTimer: (task_id) =>
+        set({
+          activeTimerTaskId: task_id,
+          activeTimerStartedAt: nowISO(),
+        }),
+
+      stopTimer: () => {
+        const s = get();
+        if (!s.activeTimerTaskId || !s.activeTimerStartedAt) return;
+        const started = new Date(s.activeTimerStartedAt).getTime();
+        const elapsedSec = Math.max(
+          0,
+          Math.round((Date.now() - started) / 1000)
+        );
+        set({
+          activeTimerTaskId: null,
+          activeTimerStartedAt: null,
+          tasks: s.tasks.map((t) =>
+            t.id === s.activeTimerTaskId
+              ? {
+                  ...t,
+                  time_spent_sec: (t.time_spent_sec ?? 0) + elapsedSec,
+                }
+              : t
+          ),
+        });
+      },
+
       resetData: () =>
         set({
           kgis: initialKGIs,
@@ -367,6 +401,8 @@ export const useStore = create<State>()(
           snoozesUsedDate: null,
           snoozesUsedCount: 0,
           journals: [],
+          activeTimerTaskId: null,
+          activeTimerStartedAt: null,
         }),
     }),
     {

@@ -7,18 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { haptic } from "@/lib/haptics";
-import { cn } from "@/lib/utils";
-import type { JournalState } from "@/lib/types";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
-
-const STATES: { value: JournalState; label: string; color: string }[] = [
-  { value: "great", label: "Огонь", color: "#34d399" },
-  { value: "good", label: "Хорошо", color: "#a78bfa" },
-  { value: "neutral", label: "Норм", color: "#b8b1cc" },
-  { value: "tired", label: "Устал", color: "#fbbf24" },
-  { value: "down", label: "Плохо", color: "#f87171" },
-];
 
 export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const addJournal = useStore((s) => s.addJournal);
@@ -29,12 +19,18 @@ export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const [date, setDate] = useState(todayISO());
   const [done, setDone] = useState("");
   const [focus, setFocus] = useState("");
-  const [state, setState] = useState<JournalState>("neutral");
+  const [state, setState] = useState("");
   const [insights, setInsights] = useState("");
   const [reflection, setReflection] = useState("");
 
   const submit = () => {
-    if (!done.trim() && !focus.trim() && !reflection.trim() && !insights.trim()) {
+    if (
+      !done.trim() &&
+      !focus.trim() &&
+      !reflection.trim() &&
+      !insights.trim() &&
+      !state.trim()
+    ) {
       return;
     }
     haptic("success");
@@ -50,14 +46,14 @@ export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
     setFocus("");
     setInsights("");
     setReflection("");
-    setState("neutral");
+    setState("");
     onSubmitted?.();
   };
 
   return (
     <Card className="p-5 md:p-6">
       <h3 className="mb-2 display text-xl text-foreground">
-        Новая запись
+        Новый отчёт
       </h3>
       {todayJournal && (
         <p className="mb-5 text-sm text-pink-bright">
@@ -65,40 +61,13 @@ export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
         </p>
       )}
       <div className="space-y-5">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>Дата</Label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Состояние</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {STATES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => setState(s.value)}
-                  className={cn(
-                    "rounded-md border px-3 py-2 text-sm transition-colors",
-                    state === s.value
-                      ? "border-transparent text-background"
-                      : "border-border text-foreground hover:border-accent-dim"
-                  )}
-                  style={
-                    state === s.value
-                      ? { background: s.color }
-                      : { color: s.color }
-                  }
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="space-y-1.5">
+          <Label>Дата</Label>
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -117,7 +86,17 @@ export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
             rows={3}
-            placeholder="1-3 главных задачи"
+            placeholder="1–3 главных задачи"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Состояние</Label>
+          <Textarea
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            rows={2}
+            placeholder="опиши состояние своими словами"
           />
         </div>
 
@@ -142,7 +121,7 @@ export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
         </div>
       </div>
       <div className="mt-5 flex justify-end">
-        <Button onClick={submit}>Сохранить запись</Button>
+        <Button onClick={submit}>Сохранить отчёт</Button>
       </div>
     </Card>
   );

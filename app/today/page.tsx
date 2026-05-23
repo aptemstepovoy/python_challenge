@@ -67,7 +67,7 @@ export default function TodayPage() {
         <a href="/dashboard" className="hover:text-accent-bright">→ Обзор</a>
         <a href="/achievements" className="hover:text-accent-bright">→ Достижения</a>
         <a href="/bosses" className="hover:text-accent-bright">→ Боссы</a>
-        <a href="/journal" className="hover:text-accent-bright">→ Дневник</a>
+        <a href="/journal" className="hover:text-accent-bright">→ Отчёт за день</a>
         <a href="/review" className="hover:text-accent-bright">→ Ревью</a>
       </nav>
     </div>

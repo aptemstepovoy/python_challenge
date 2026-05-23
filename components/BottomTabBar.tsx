@@ -8,7 +8,7 @@ const items = [
   { href: "/today", label: "Сегодня" },
   { href: "/habits", label: "Привычки" },
   { href: "/tasks", label: "Задачи" },
-  { href: "/journal", label: "Дневник" },
+  { href: "/journal", label: "Отчёт" },
   { href: "/review", label: "Ревью" },
 ];
 

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import { StepAccordionList } from "@/components/StepAccordion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { TaskItem } from "@/components/TaskItem";
 import { TaskFormDialog } from "@/components/TaskFormDialog";
 import { useStore } from "@/lib/store";
@@ -21,7 +22,7 @@ import {
   parseISO,
 } from "date-fns";
 import type { Task } from "@/lib/types";
-import { Plus } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 
 type Filter = "buckets" | "priority" | "by_step" | "overdue" | "all";
 
@@ -121,10 +122,24 @@ function PriorityAccordion({
 }
 
 export default function TasksPage() {
-  const tasks = useStore((s) => s.tasks);
+  const allTasks = useStore((s) => s.tasks);
   const steps = useStore((s) => s.steps);
   const [filter, setFilter] = useState<Filter>("buckets");
   const [addOpen, setAddOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const tasks = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allTasks;
+    return allTasks.filter(
+      (t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.id.toLowerCase().includes(q) ||
+        (t.result_definition ?? "").toLowerCase().includes(q)
+    );
+  }, [allTasks, query]);
+
+  const hasQuery = query.trim().length > 0;
 
   const buckets = useMemo(() => {
     const today = new Date();
@@ -236,6 +251,26 @@ export default function TasksPage() {
         </Button>
       </header>
 
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Поиск по задачам — название, ID, описание"
+          className="pl-9 pr-9 h-11 text-base"
+        />
+        {hasQuery && (
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-foreground"
+            aria-label="clear"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
       <div className="-mx-1 flex flex-wrap gap-2 px-1">
         {filters.map((f) => (
           <Button
@@ -249,6 +284,16 @@ export default function TasksPage() {
           </Button>
         ))}
       </div>
+
+      {hasQuery && (
+        <div className="font-mono text-xs uppercase tracking-wider text-secondary">
+          найдено{" "}
+          <span className="num text-accent-bright">
+            {tasks.filter((t) => t.status !== "done").length}
+          </span>{" "}
+          из {allTasks.filter((t) => t.status !== "done").length}
+        </div>
+      )}
 
       {filter === "buckets" && (
         <div>
@@ -265,6 +310,20 @@ export default function TasksPage() {
             <Accordion
               type="multiple"
               defaultValue={["overdue", "today", "week"]}
+              {...(hasQuery
+                ? {
+                    value: [
+                      "overdue",
+                      "today",
+                      "week",
+                      "month",
+                      "q3",
+                      "m6",
+                      "year",
+                      "later",
+                    ],
+                  }
+                : {})}
               className="space-y-3"
             >
               <Bucket
