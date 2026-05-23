@@ -1,15 +1,16 @@
-import { parseISO } from "date-fns";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { Task } from "./types";
+import { initialBosses } from "./initial-data";
 
 const STEP_PRIORITY: Record<string, number> = {
   S1: 0,
-  "S1.1": 0.5,
-  "S1.2": 0.6,
-  S2: 1,
-  "S2.1": 1.5,
-  S3: 2,
-  S4: 3,
-  S5: 4,
+  "S1.1": 2,
+  "S1.2": 3,
+  S2: 4,
+  "S2.1": 5,
+  S3: 6,
+  S4: 8,
+  S5: 10,
 };
 
 function isOpen(t: Task): boolean {
@@ -21,6 +22,69 @@ function notSnoozed(t: Task, today: Date): boolean {
   return parseISO(t.snoozed_until) <= today;
 }
 
+export function nearestActiveBossId(today: Date = new Date()): string | null {
+  const upcoming = initialBosses
+    .filter((b) => parseISO(b.target_date) >= today)
+    .slice()
+    .sort((a, b) => a.target_date.localeCompare(b.target_date));
+  return upcoming[0]?.id ?? null;
+}
+
+export type Priority = {
+  task: Task;
+  score: number;
+  reasons: string[];
+};
+
+function scoreTask(t: Task, today: Date, hotBoss: string | null): Priority {
+  const reasons: string[] = [];
+  let score: number;
+  const days = differenceInCalendarDays(parseISO(t.deadline), today);
+
+  if (days < 0) {
+    score = -1000 + days;
+    reasons.push(`Просрочено · ${-days} дн.`);
+  } else if (days === 0) {
+    score = 5;
+    reasons.push("Дедлайн сегодня");
+  } else if (days === 1) {
+    score = 10;
+    reasons.push("Дедлайн завтра");
+  } else if (days <= 7) {
+    score = 20 - days;
+    reasons.push(`На этой неделе · через ${days} дн.`);
+  } else if (days <= 30) {
+    score = 40;
+    reasons.push(`В этом месяце · ${days} дн.`);
+  } else {
+    score = 80;
+  }
+
+  if (t.status === "in_progress") {
+    score -= 8;
+    reasons.push("В работе");
+  }
+
+  if (t.linked_boss && hotBoss && t.linked_boss === hotBoss) {
+    score -= 10;
+    const bossName = initialBosses.find((b) => b.id === t.linked_boss)?.name
+      ?? t.linked_boss;
+    reasons.push(`Босс ${bossName}`);
+  } else if (t.linked_boss) {
+    const bossName = initialBosses.find((b) => b.id === t.linked_boss)?.name
+      ?? t.linked_boss;
+    reasons.push(`Босс ${bossName}`);
+    score -= 2;
+  }
+
+  const stepWeight = STEP_PRIORITY[t.step_id] ?? 5;
+  score += stepWeight;
+
+  score -= (t.xp ?? 25) / 25;
+
+  return { task: t, score, reasons };
+}
+
 export function pickMainTask(
   tasks: Task[],
   today: Date = new Date()
@@ -29,46 +93,25 @@ export function pickMainTask(
     (t) => isOpen(t) && notSnoozed(t, today)
   );
   if (candidates.length === 0) return null;
+  const hot = nearestActiveBossId(today);
+  const scored = candidates.map((t) => scoreTask(t, today, hot));
+  scored.sort((a, b) => a.score - b.score);
+  return scored[0].task;
+}
 
-  const todayISO = today.toISOString().slice(0, 10);
-
-  const overdue = candidates
-    .filter((t) => t.deadline < todayISO)
-    .slice()
-    .sort((a, b) => a.deadline.localeCompare(b.deadline));
-  if (overdue.length > 0) return overdue[0];
-
-  const dueToday = candidates.filter((t) => t.deadline === todayISO);
-  if (dueToday.length > 0) {
-    return dueToday.slice().sort((a, b) => (b.xp ?? 25) - (a.xp ?? 25))[0];
-  }
-
-  const weekEnd = new Date(today);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-  const weekEndISO = weekEnd.toISOString().slice(0, 10);
-  const thisWeek = candidates
-    .filter((t) => t.deadline > todayISO && t.deadline <= weekEndISO)
-    .slice()
-    .sort((a, b) => {
-      const ap =
-        (STEP_PRIORITY[a.step_id] ?? 5) * 100 -
-        (a.status === "in_progress" ? 50 : 0) -
-        (a.xp ?? 25);
-      const bp =
-        (STEP_PRIORITY[b.step_id] ?? 5) * 100 -
-        (b.status === "in_progress" ? 50 : 0) -
-        (b.xp ?? 25);
-      return ap - bp;
-    });
-  if (thisWeek.length > 0) return thisWeek[0];
-
-  const sorted = candidates.slice().sort((a, b) => {
-    const ap = STEP_PRIORITY[a.step_id] ?? 5;
-    const bp = STEP_PRIORITY[b.step_id] ?? 5;
-    if (ap !== bp) return ap - bp;
-    return a.deadline.localeCompare(b.deadline);
-  });
-  return sorted[0];
+export function pickPrioritiesWithReasons(
+  tasks: Task[],
+  exclude: string | null,
+  count: number = 3,
+  today: Date = new Date()
+): Priority[] {
+  const candidates = tasks.filter(
+    (t) => isOpen(t) && t.id !== exclude && notSnoozed(t, today)
+  );
+  const hot = nearestActiveBossId(today);
+  const scored = candidates.map((t) => scoreTask(t, today, hot));
+  scored.sort((a, b) => a.score - b.score);
+  return scored.slice(0, count);
 }
 
 export function pickTopPriorities(
@@ -77,22 +120,9 @@ export function pickTopPriorities(
   count: number = 3,
   today: Date = new Date()
 ): Task[] {
-  const todayISO = today.toISOString().slice(0, 10);
-  const candidates = tasks
-    .filter(
-      (t) => isOpen(t) && t.id !== exclude && notSnoozed(t, today)
-    )
-    .slice()
-    .sort((a, b) => {
-      const overdueA = a.deadline < todayISO ? 0 : 1;
-      const overdueB = b.deadline < todayISO ? 0 : 1;
-      if (overdueA !== overdueB) return overdueA - overdueB;
-      const stepA = STEP_PRIORITY[a.step_id] ?? 5;
-      const stepB = STEP_PRIORITY[b.step_id] ?? 5;
-      if (stepA !== stepB) return stepA - stepB;
-      return a.deadline.localeCompare(b.deadline);
-    });
-  return candidates.slice(0, count);
+  return pickPrioritiesWithReasons(tasks, exclude, count, today).map(
+    (p) => p.task
+  );
 }
 
 export function snoozesLeft(

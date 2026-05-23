@@ -62,11 +62,16 @@ export function TodayCombined() {
         </Link>
       </div>
 
-      <div className="mb-3 flex items-center gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
-          привычки
-        </span>
-        <div className="flex flex-wrap gap-1.5">
+      <div className="mb-3">
+        <div className="mb-2 flex items-baseline justify-between">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-secondary">
+            Привычки
+          </span>
+          <span className="num text-xs text-foreground">
+            {ratio.done} / {ratio.total}
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5">
           {daily.map((h) => {
             const done = !!logForToday(habitLogs, h.id, todayISO);
             return (
@@ -77,23 +82,32 @@ export function TodayCombined() {
                   toggleHabit(h.id);
                 }}
                 aria-label={h.name}
-                className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-transform active:scale-90"
-                )}
-                style={{
-                  background: done ? h.color : "transparent",
-                  borderColor: done ? "transparent" : `${h.color}80`,
-                  color: done ? "#0a0814" : h.color,
-                }}
+                className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
               >
-                <Icon name={h.icon} className="h-3.5 w-3.5" strokeWidth={done ? 2.5 : 2} />
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2"
+                  )}
+                  style={{
+                    background: done ? h.color : "transparent",
+                    borderColor: done ? "transparent" : `${h.color}80`,
+                    color: done ? "#0a0814" : h.color,
+                  }}
+                >
+                  <Icon name={h.icon} className="h-3.5 w-3.5" strokeWidth={done ? 2.5 : 2} />
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] leading-tight text-center truncate w-full",
+                    done ? "text-accent-bright" : "text-secondary"
+                  )}
+                >
+                  {h.name}
+                </span>
               </button>
             );
           })}
         </div>
-        <span className="num ml-auto text-xs text-foreground">
-          {ratio.done}/{ratio.total}
-        </span>
       </div>
 
       <div className="flex-1 space-y-1.5 overflow-y-auto">

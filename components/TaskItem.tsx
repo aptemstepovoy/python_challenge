@@ -18,9 +18,11 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { TaskFormDialog } from "@/components/TaskFormDialog";
 import { cn, deadlineCategory, formatDateRu } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { haptic } from "@/lib/haptics";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Status, Task } from "@/lib/types";
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -47,10 +49,22 @@ const toneByCat = {
 export function TaskItem({ task }: { task: Task }) {
   const cycle = useStore((s) => s.cycleTaskStatus);
   const setStatus = useStore((s) => s.setTaskStatus);
+  const deleteTask = useStore((s) => s.deleteTask);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const cat = deadlineCategory(task.deadline);
   const done = task.status === "done";
+
+  const onDelete = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.confirm(`Удалить задачу «${task.title}»?`)
+    ) {
+      deleteTask(task.id);
+      setOpen(false);
+    }
+  };
 
   return (
     <>
@@ -73,18 +87,18 @@ export function TaskItem({ task }: { task: Task }) {
           onClick={() => setOpen(true)}
           className="flex flex-1 items-baseline gap-3 text-left min-w-0"
         >
-          <span className="num shrink-0 text-xs text-muted">{task.id}</span>
+          <span className="num shrink-0 text-xs text-secondary">{task.id}</span>
           <span
             className={cn(
               "flex-1 truncate text-sm",
-              done ? "text-muted line-through" : "text-foreground"
+              done ? "text-secondary line-through" : "text-foreground"
             )}
           >
             {task.title}
           </span>
         </button>
         <div className="flex shrink-0 items-center gap-2 md:gap-3">
-          <span className="num text-[11px] text-muted md:text-xs">
+          <span className="num text-[11px] text-secondary md:text-xs">
             {formatDateRu(task.deadline)}
           </span>
           {!done && (
@@ -100,14 +114,14 @@ export function TaskItem({ task }: { task: Task }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              <span className="num mr-3 text-muted">{task.id}</span>
+              <span className="num mr-3 text-secondary">{task.id}</span>
               {task.title}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="font-mono uppercase tracking-wider text-muted mb-1">
+                <div className="font-mono text-xs uppercase tracking-wider text-secondary mb-1">
                   Старт
                 </div>
                 <div className="num text-foreground">
@@ -115,7 +129,7 @@ export function TaskItem({ task }: { task: Task }) {
                 </div>
               </div>
               <div>
-                <div className="font-mono uppercase tracking-wider text-muted mb-1">
+                <div className="font-mono text-xs uppercase tracking-wider text-secondary mb-1">
                   Дедлайн
                 </div>
                 <div className="num text-foreground">
@@ -125,13 +139,24 @@ export function TaskItem({ task }: { task: Task }) {
             </div>
 
             <div>
-              <div className="font-mono text-xs uppercase tracking-wider text-muted mb-1">
+              <div className="font-mono text-xs uppercase tracking-wider text-secondary mb-1">
                 Определение результата
               </div>
-              <div className="text-sm text-foreground">
+              <div className="text-base text-foreground">
                 {task.result_definition || "—"}
               </div>
             </div>
+
+            {task.linked_boss && (
+              <div>
+                <div className="font-mono text-xs uppercase tracking-wider text-secondary mb-1">
+                  Босс
+                </div>
+                <div className="text-base text-accent-bright">
+                  {task.linked_boss}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label>Статус</Label>
@@ -153,11 +178,33 @@ export function TaskItem({ task }: { task: Task }) {
               </Select>
             </div>
           </div>
-          <div className="flex justify-end">
-            <Button onClick={() => setOpen(false)}>Закрыть</Button>
+          <div className="flex flex-wrap justify-between gap-2">
+            <Button
+              variant="ghost"
+              onClick={onDelete}
+              className="text-danger-bright hover:bg-danger/10"
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Удалить
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  setEditOpen(true);
+                }}
+              >
+                <Pencil className="mr-1.5 h-4 w-4" />
+                Редактировать
+              </Button>
+              <Button onClick={() => setOpen(false)}>Закрыть</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <TaskFormDialog open={editOpen} onOpenChange={setEditOpen} task={task} />
     </>
   );
 }

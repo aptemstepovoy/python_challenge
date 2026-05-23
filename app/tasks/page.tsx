@@ -4,15 +4,15 @@ import { useMemo, useState } from "react";
 import { StepAccordionList } from "@/components/StepAccordion";
 import { Button } from "@/components/ui/button";
 import { TaskItem } from "@/components/TaskItem";
+import { TaskFormDialog } from "@/components/TaskFormDialog";
 import { useStore } from "@/lib/store";
 import {
   cn,
   isOverdue,
-  isThisWeek,
-  isThisMonth,
 } from "@/lib/utils";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { Task } from "@/lib/types";
+import { Plus } from "lucide-react";
 
 type Filter =
   | "buckets"
@@ -75,6 +75,7 @@ export default function TasksPage() {
   const tasks = useStore((s) => s.tasks);
   const steps = useStore((s) => s.steps);
   const [filter, setFilter] = useState<Filter>("buckets");
+  const [addOpen, setAddOpen] = useState(false);
 
   const buckets = useMemo(() => {
     const today = new Date();
@@ -148,13 +149,19 @@ export default function TasksPage() {
 
   return (
     <div className="p-4 space-y-6 md:p-10 md:space-y-8">
-      <header className="border-b border-border pb-5 md:pb-6">
-        <h1 className="display text-2xl text-foreground text-glow md:text-3xl">
-          Задачи
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Когда нужно сделать · что важно сейчас
-        </p>
+      <header className="flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between md:pb-6">
+        <div>
+          <h1 className="display text-3xl text-foreground text-glow md:text-4xl">
+            Задачи
+          </h1>
+          <p className="mt-2 text-base text-secondary">
+            Когда нужно сделать · что важно сейчас
+          </p>
+        </div>
+        <Button onClick={() => setAddOpen(true)} className="self-start md:self-auto">
+          <Plus className="mr-1.5 h-4 w-4" />
+          Создать задачу
+        </Button>
       </header>
 
       <div className="-mx-1 flex flex-wrap gap-2 px-1">
@@ -250,6 +257,8 @@ export default function TasksPage() {
       {filter === "by_step" && (
         <StepAccordionList steps={steps} tasks={tasks} />
       )}
+
+      <TaskFormDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }

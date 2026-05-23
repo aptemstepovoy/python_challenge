@@ -44,6 +44,7 @@ type State = {
   startTask: (id: string) => void;
   completeTask: (id: string) => void;
   snoozeTask: (id: string) => boolean;
+  deleteTask: (id: string) => void;
 
   addReview: (review: Omit<WeeklyReview, "id">) => void;
   addWeightEntry: (entry: WeightEntry) => void;
@@ -181,6 +182,11 @@ export const useStore = create<State>()(
           });
           return { tasks, xp: s.xp + xpDelta };
         }),
+
+      deleteTask: (id) =>
+        set((s) => ({
+          tasks: s.tasks.filter((t) => t.id !== id),
+        })),
 
       snoozeTask: (id) => {
         const s = get();
@@ -336,8 +342,8 @@ export const useStore = create<State>()(
         }),
     }),
     {
-      name: "operator-store-v4",
-      version: 4,
+      name: "operator-store-v5",
+      version: 5,
     }
   )
 );
