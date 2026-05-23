@@ -10,26 +10,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#08060b",
-        surface: "#15110d",
-        "surface-2": "#1c1812",
-        "surface-3": "#241e15",
-        foreground: "#ebe2cf",
-        muted: "#8a7e6b",
-        border: "#3a2e1c",
-        "border-bright": "#5a4828",
-        accent: "#d4a574",
-        "accent-bright": "#f3c97a",
-        "accent-dim": "#a37e54",
-        gold: "#d4a574",
-        "gold-light": "#f3c97a",
-        bronze: "#6b4c2a",
-        danger: "#c44545",
-        "danger-bright": "#e36767",
-        warn: "#d4a574",
-        ok: "#5a9b6a",
-        "ok-bright": "#7dc28d",
-        magic: "#7e6cd4",
+        background: "#0a0814",
+        surface: "#14111f",
+        "surface-2": "#1c1830",
+        "surface-3": "#251f3d",
+        foreground: "#ece8f5",
+        muted: "#8b85a2",
+        border: "#2d2845",
+        "border-bright": "#4a4170",
+        accent: "#a78bfa",
+        "accent-bright": "#c4b5fd",
+        "accent-dim": "#7c5cdb",
+        violet: "#a78bfa",
+        "violet-bright": "#c4b5fd",
+        pink: "#ec4899",
+        "pink-bright": "#f472b6",
+        cyan: "#22d3ee",
+        "cyan-bright": "#67e8f9",
+        magic: "#a78bfa",
+        gold: "#fbbf24",
+        "gold-bright": "#fcd34d",
+        danger: "#f87171",
+        "danger-bright": "#fca5a5",
+        warn: "#fbbf24",
+        ok: "#34d399",
+        "ok-bright": "#6ee7b7",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
@@ -42,32 +47,40 @@ const config: Config = {
         display: [
           "var(--font-display)",
           "Forum",
-          "Trajan Pro",
           "Cormorant Garamond",
           "serif",
         ],
       },
       borderRadius: {
-        DEFAULT: "4px",
-        md: "6px",
-        lg: "6px",
+        DEFAULT: "6px",
+        md: "8px",
+        lg: "12px",
+        xl: "16px",
       },
       boxShadow: {
-        gold: "0 0 0 1px rgba(212,165,116,0.35), 0 0 18px -2px rgba(212,165,116,0.25)",
-        "gold-lg":
-          "0 0 0 1px rgba(212,165,116,0.5), 0 0 30px -2px rgba(212,165,116,0.45), inset 0 1px 0 0 rgba(243,201,122,0.18)",
-        inset: "inset 0 1px 0 0 rgba(243,201,122,0.08)",
+        glow: "0 0 0 1px rgba(167,139,250,0.35), 0 0 24px -2px rgba(167,139,250,0.3)",
+        "glow-lg":
+          "0 0 0 1px rgba(167,139,250,0.5), 0 0 40px -2px rgba(167,139,250,0.5), inset 0 1px 0 0 rgba(196,181,253,0.2)",
+        "glow-pink":
+          "0 0 0 1px rgba(236,72,153,0.5), 0 0 30px -2px rgba(236,72,153,0.4)",
+        inset: "inset 0 1px 0 0 rgba(196,181,253,0.08)",
       },
       backgroundImage: {
-        "panel": "linear-gradient(180deg, #1d1812 0%, #15110d 100%)",
+        "panel": "linear-gradient(180deg, #1a1530 0%, #100c1f 100%)",
         "panel-bright":
-          "linear-gradient(180deg, #2a2218 0%, #1c1612 100%)",
-        "gold-fill":
-          "linear-gradient(180deg, #f3c97a 0%, #d4a574 50%, #a37e54 100%)",
-        "gold-fill-soft":
-          "linear-gradient(180deg, rgba(243,201,122,0.18) 0%, rgba(212,165,116,0.06) 100%)",
-        "vignette":
-          "radial-gradient(ellipse at top, rgba(212,165,116,0.05) 0%, transparent 55%)",
+          "linear-gradient(180deg, #251f3d 0%, #1a1530 100%)",
+        "hero-gradient":
+          "linear-gradient(135deg, #a78bfa 0%, #ec4899 50%, #f97316 100%)",
+        "violet-fill":
+          "linear-gradient(180deg, #c4b5fd 0%, #a78bfa 50%, #7c5cdb 100%)",
+        "pink-fill":
+          "linear-gradient(180deg, #f472b6 0%, #ec4899 50%, #be185d 100%)",
+        "hp-fill":
+          "linear-gradient(180deg, #fca5a5 0%, #f87171 50%, #b91c1c 100%)",
+        "xp-fill":
+          "linear-gradient(90deg, #a78bfa 0%, #ec4899 60%, #22d3ee 100%)",
+        "noise":
+          "radial-gradient(circle at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(236,72,153,0.05) 0%, transparent 50%)",
       },
       keyframes: {
         "accordion-down": {
@@ -78,29 +91,34 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-gold": {
+        "pulse-glow": {
           "0%, 100%": {
-            boxShadow: "0 0 0 1px rgba(212,165,116,0.45), 0 0 18px -2px rgba(212,165,116,0.25)",
+            boxShadow: "0 0 0 1px rgba(167,139,250,0.45), 0 0 24px -2px rgba(167,139,250,0.3)",
           },
           "50%": {
-            boxShadow: "0 0 0 1px rgba(243,201,122,0.7), 0 0 32px 0 rgba(243,201,122,0.5)",
+            boxShadow: "0 0 0 1px rgba(196,181,253,0.7), 0 0 40px 0 rgba(196,181,253,0.55)",
           },
         },
         "glow": {
-          "0%, 100%": { textShadow: "0 0 8px rgba(212,165,116,0.45)" },
-          "50%": { textShadow: "0 0 18px rgba(243,201,122,0.85)" },
+          "0%, 100%": { textShadow: "0 0 12px rgba(167,139,250,0.45)" },
+          "50%": { textShadow: "0 0 22px rgba(196,181,253,0.85)" },
         },
         "float-up": {
           "0%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-gold": "pulse-gold 1.8s ease-in-out",
-        "glow": "glow 2.5s ease-in-out infinite",
+        "pulse-glow": "pulse-glow 2s ease-in-out",
+        "glow": "glow 3s ease-in-out infinite",
         "float-up": "float-up 0.4s ease-out",
+        "shimmer": "shimmer 3s linear infinite",
       },
     },
   },

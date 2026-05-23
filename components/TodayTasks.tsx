@@ -40,7 +40,7 @@ function Row({ task }: { task: Task }) {
   return (
     <div
       className={cn(
-        "group flex items-center gap-3 rounded border px-3 py-2.5 transition-colors",
+        "group flex items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
         task.status === "in_progress"
           ? "border-accent/40 bg-accent/5"
           : "border-border bg-surface hover:border-accent-dim",
@@ -55,24 +55,19 @@ function Row({ task }: { task: Task }) {
           else completeTask(task.id);
         }}
       />
-      <div className="flex-1 min-w-0">
-        <div className="num text-[10px] text-muted">{task.id}</div>
-        <div
-          className={cn(
-            "truncate text-sm",
-            done ? "text-muted line-through" : "text-foreground"
-          )}
-        >
-          {task.title}
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="num text-[10px] text-muted">+{task.xp ?? 25}</span>
-        {!done && cat === "overdue" && (
-          <Badge tone="danger">Просрочено</Badge>
+      <span className="num shrink-0 text-[10px] text-muted">{task.id}</span>
+      <span
+        className={cn(
+          "flex-1 truncate",
+          done ? "text-muted line-through" : "text-foreground"
         )}
-        {!done && cat === "week" && <Badge tone="warn">Неделя</Badge>}
-      </div>
+      >
+        {task.title}
+      </span>
+      <span className="num shrink-0 text-[10px] text-accent">+{task.xp ?? 25}</span>
+      {!done && cat === "overdue" && (
+        <Badge tone="danger" className="shrink-0 hidden sm:inline-flex">просроч.</Badge>
+      )}
     </div>
   );
 }

@@ -336,8 +336,8 @@ export const useStore = create<State>()(
         }),
     }),
     {
-      name: "operator-store-v3",
-      version: 3,
+      name: "operator-store-v4",
+      version: 4,
     }
   )
 );

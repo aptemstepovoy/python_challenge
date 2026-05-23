@@ -10,13 +10,13 @@ import { CountUp } from "@/components/CountUp";
 import { Progress } from "@/components/ui/progress";
 
 const items = [
-  { href: "/today", label: "Today" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/habits", label: "Habits" },
-  { href: "/tasks", label: "Tasks" },
-  { href: "/bosses", label: "Bosses" },
-  { href: "/achievements", label: "Achievements" },
-  { href: "/review", label: "Review" },
+  { href: "/today", label: "Сегодня" },
+  { href: "/dashboard", label: "Обзор" },
+  { href: "/habits", label: "Привычки" },
+  { href: "/tasks", label: "Задачи" },
+  { href: "/bosses", label: "Боссы" },
+  { href: "/achievements", label: "Достижения" },
+  { href: "/review", label: "Ревью" },
 ];
 
 export function Sidebar() {

@@ -7,65 +7,48 @@ import { computeBossState, nearestBoss } from "@/lib/bosses-logic";
 import {
   levelFromXP,
   progressWithinLevel,
-  xpToNextLevel,
 } from "@/lib/xp";
 import { Avatar, useAvatarState } from "@/components/Avatar";
-import { CountUp } from "@/components/CountUp";
 import { cn } from "@/lib/utils";
 
-function Bar({
-  label,
+const TITLES: Record<number, string> = {
+  1: "Новичок",
+  2: "Оператор",
+  3: "Архитектор",
+  4: "Стратег",
+  5: "Свободный",
+};
+
+function GameBar({
   current,
   max,
-  tone,
-  unit,
+  fill,
+  glow,
 }: {
-  label: string;
   current: number;
   max: number;
-  tone: "hp" | "xp";
-  unit?: string;
+  fill: string;
+  glow: string;
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0;
   return (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between font-mono text-[9px] uppercase tracking-[0.15em]">
-        <span className={tone === "hp" ? "text-danger-bright" : "text-accent-bright"}>
-          {label}
-        </span>
-        <span className="num text-foreground/90">
-          <CountUp value={current} duration={500} />
-          {unit ? ` ${unit}` : ""} / {max}
-        </span>
-      </div>
+    <div
+      className="relative h-2 overflow-hidden rounded-sm border border-black/40 bg-black/70"
+      style={{ boxShadow: "inset 0 1px 0 rgba(0,0,0,0.6)" }}
+    >
       <div
-        className={cn(
-          "relative h-2 overflow-hidden rounded-sm",
-          "bg-black/60",
-          "border border-black/40"
-        )}
-        style={{ boxShadow: "inset 0 1px 0 rgba(0,0,0,0.5)" }}
-      >
-        <div
-          className="h-full transition-[width] duration-500"
-          style={{
-            width: `${pct}%`,
-            background:
-              tone === "hp"
-                ? "linear-gradient(180deg, #e36767 0%, #c44545 50%, #7a2424 100%)"
-                : "linear-gradient(180deg, #f3c97a 0%, #d4a574 50%, #8a6432 100%)",
-            boxShadow:
-              tone === "hp"
-                ? "0 0 8px rgba(228,103,103,0.45), inset 0 1px 0 rgba(255,255,255,0.15)"
-                : "0 0 10px rgba(243,201,122,0.5), inset 0 1px 0 rgba(255,255,255,0.2)",
-          }}
-        />
-      </div>
+        className="h-full transition-[width] duration-500"
+        style={{
+          width: `${pct}%`,
+          background: fill,
+          boxShadow: `0 0 10px ${glow}, inset 0 1px 0 rgba(255,255,255,0.25)`,
+        }}
+      />
     </div>
   );
 }
 
-export function CharacterCard() {
+export function CharacterCard({ compact = false }: { compact?: boolean }) {
   const xp = useStore((s) => s.xp);
   const tasks = useStore((s) => s.tasks);
   const habits = useStore((s) => s.habits);
@@ -74,67 +57,71 @@ export function CharacterCard() {
 
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
-  const toNext = xpToNextLevel(xp);
+  const xpInLevel = xp - lvl.min;
+  const xpRange = Number.isFinite(lvl.max) ? lvl.max - lvl.min : 9999;
 
   const bossInfo = useMemo(() => {
     const states = initialBosses.map((b) =>
       computeBossState(b, tasks, habits, habitLogs)
     );
-    const target = nearestBoss(states);
-    return target;
+    return nearestBoss(states);
   }, [tasks, habits, habitLogs]);
 
-  const titleByLevel: Record<number, string> = {
-    1: "Новичок",
-    2: "Оператор",
-    3: "Архитектор",
-    4: "Стратег",
-    5: "Свободный",
-  };
-
   return (
-    <div className="relative panel-bright corners overflow-hidden p-5 md:p-7">
-      <div className="pointer-events-none absolute inset-0 bg-vignette opacity-60" />
+    <div className="panel-hero corners relative overflow-hidden rounded-lg p-4">
+      <div className="pointer-events-none absolute inset-0 bg-noise opacity-60" />
 
-      <div className="relative flex flex-col items-center gap-4 md:flex-row md:items-center md:gap-7">
-        <div className="shrink-0">
-          <Avatar size={150} />
-        </div>
-
-        <div className="w-full flex-1 space-y-4">
-          <div className="text-center md:text-left">
-            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted">
-              Уровень {lvl.num} ·{" "}
-              <span className="text-accent-bright">{titleByLevel[lvl.num]}</span>
-            </div>
-            <div className="display mt-1 text-2xl text-foreground text-glow md:text-3xl">
-              Артём
-            </div>
+      <div className="relative space-y-2.5">
+        <div className="flex items-baseline justify-between">
+          <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
+            HP · цель {bossInfo ? bossInfo.boss.name : "—"}
           </div>
+          <div className="num text-[10px] text-foreground/90">
+            {bossInfo ? `${bossInfo.hpRemaining} / ${bossInfo.boss.total_hp}` : "—"}
+          </div>
+        </div>
+        <GameBar
+          current={bossInfo ? bossInfo.hpRemaining : 0}
+          max={bossInfo ? bossInfo.boss.total_hp : 1}
+          fill="linear-gradient(180deg, #fca5a5 0%, #f87171 50%, #b91c1c 100%)"
+          glow="rgba(248,113,113,0.5)"
+        />
 
-          {bossInfo && (
-            <Bar
-              label={`Цель — ${bossInfo.boss.name}`}
-              current={bossInfo.hpRemaining}
-              max={bossInfo.boss.total_hp}
-              tone="hp"
-              unit="HP"
-            />
-          )}
+        <div className="flex items-baseline justify-between">
+          <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
+            XP · L{lvl.num} {TITLES[lvl.num]}
+          </div>
+          <div className="num text-[10px] text-foreground/90">
+            {xpInLevel} / {xpRange}
+          </div>
+        </div>
+        <GameBar
+          current={lvlPct}
+          max={100}
+          fill="linear-gradient(90deg, #a78bfa 0%, #ec4899 60%, #22d3ee 100%)"
+          glow="rgba(167,139,250,0.55)"
+        />
+      </div>
 
-          <Bar label="Опыт" current={xp} max={lvl.min + (lvl.max === Infinity ? 9999 : lvl.max - lvl.min)} tone="xp" />
-
-          <div className="flex flex-wrap justify-between gap-2 font-mono text-[10px] uppercase tracking-wider text-muted">
-            <span>
-              до уровня <span className="num text-accent">{toNext}</span> XP
-            </span>
-            <span>
-              {a.weightTier === "lean"
-                ? "тонкий силуэт"
-                : a.weightTier === "mid"
-                  ? "в форме"
-                  : "стартовая форма"}
-            </span>
+      <div className="relative mt-3 flex flex-col items-center">
+        <div
+          className="relative"
+          style={{
+            filter: `drop-shadow(0 0 20px ${a.glow}88)`,
+          }}
+        >
+          <Avatar size={compact ? 120 : 140} />
+        </div>
+        <div className="mt-1 text-center">
+          <div className="display text-lg leading-none text-foreground text-glow">
+            Артём
+          </div>
+          <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
+            {a.weightTier === "lean"
+              ? "тонкий силуэт"
+              : a.weightTier === "mid"
+                ? "в форме"
+                : "стартовая форма"}
           </div>
         </div>
       </div>

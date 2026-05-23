@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/today", label: "Today" },
-  { href: "/habits", label: "Habits" },
-  { href: "/tasks", label: "Tasks" },
-  { href: "/bosses", label: "Bosses" },
-  { href: "/review", label: "Review" },
+  { href: "/today", label: "Сегодня" },
+  { href: "/habits", label: "Привычки" },
+  { href: "/tasks", label: "Задачи" },
+  { href: "/bosses", label: "Боссы" },
+  { href: "/review", label: "Ревью" },
 ];
 
 export function BottomTabBar() {
