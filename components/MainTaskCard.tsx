@@ -13,7 +13,7 @@ import {
   formatDateRu,
 } from "@/lib/utils";
 
-export function MainTaskCard() {
+export function MainTaskCard({ compact = false }: { compact?: boolean }) {
   const tasks = useStore((s) => s.tasks);
   const startTask = useStore((s) => s.startTask);
   const completeTask = useStore((s) => s.completeTask);
@@ -47,15 +47,11 @@ export function MainTaskCard() {
 
   if (!task) {
     return (
-      <div className="rounded-md border border-border bg-surface p-6 md:p-8">
-        <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-          Сегодня чисто
-        </div>
-        <h2 className="text-2xl text-foreground md:text-3xl">
-          Всё закрыто. Хорошо.
-        </h2>
-        <p className="mt-3 text-sm text-muted">
-          Можешь подготовиться к завтра — открой Tasks и спланируй приоритеты.
+      <div className="panel-bright corners rounded-md p-4 md:p-5 h-full flex flex-col justify-center items-center text-center">
+        <Sparkles className="h-6 w-6 text-accent-bright mb-2" />
+        <div className="display text-lg text-accent-bright">Чисто</div>
+        <p className="mt-1 text-sm text-muted">
+          Открой задачи и распланируй
         </p>
       </div>
     );
@@ -63,33 +59,25 @@ export function MainTaskCard() {
 
   if (justDone) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-ok/40 bg-ok/5 p-10 text-center">
-        <Sparkles className="h-8 w-8 text-ok" />
-        <div className="font-mono text-sm uppercase tracking-wider text-ok">
-          +{task.xp ?? 25} XP
-        </div>
-        <div className="text-sm text-muted">подтягиваю следующую…</div>
+      <div className="panel-bright corners rounded-md p-4 md:p-5 h-full flex flex-col items-center justify-center gap-2 text-center border-ok/40">
+        <Sparkles className="h-7 w-7 text-ok" />
+        <div className="display text-xl text-ok">+{task.xp ?? 25} XP</div>
+        <div className="text-xs text-muted">подтягиваю следующую…</div>
       </div>
     );
   }
 
   const cat = deadlineCategory(task.deadline, today);
   const catLabel =
-    cat === "overdue"
-      ? "Просрочено"
-      : cat === "week"
-        ? "На этой неделе"
-        : cat === "month"
-          ? "В этом месяце"
-          : "Позже";
+    cat === "overdue" ? "Просрочено"
+    : cat === "week" ? "Эта неделя"
+    : cat === "month" ? "Этот месяц"
+    : "Позже";
   const catTone: "danger" | "warn" | "accent" | "neutral" =
-    cat === "overdue"
-      ? "danger"
-      : cat === "week"
-        ? "warn"
-        : cat === "month"
-          ? "accent"
-          : "neutral";
+    cat === "overdue" ? "danger"
+    : cat === "week" ? "warn"
+    : cat === "month" ? "accent"
+    : "neutral";
 
   const onStart = () => {
     haptic("tap");
@@ -110,79 +98,73 @@ export function MainTaskCard() {
   const started = task.status === "in_progress";
 
   return (
-    <div className="rounded-md border border-border bg-surface p-6 md:p-8">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-          Сейчас делай это
+    <div className="panel-bright corners rounded-md p-3 md:p-4 h-full flex flex-col">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-bright">
+          ◆ Делай сейчас
         </div>
         <Badge tone={catTone}>{catLabel}</Badge>
       </div>
 
-      <div className="mb-2 num text-[10px] uppercase tracking-wider text-muted">
-        {task.id}
-        {task.linked_boss && (
-          <>
-            {" · "}
-            <span className="text-accent/80">босс {task.linked_boss}</span>
-          </>
-        )}
+      <div className="num text-[10px] uppercase tracking-wider text-muted">
+        {task.id}{task.linked_boss ? ` · ${task.linked_boss}` : ""}
       </div>
 
-      <h2 className="text-2xl leading-tight text-foreground md:text-3xl">
+      <h2 className={cn(
+        "leading-tight text-foreground mt-1",
+        compact ? "text-lg md:text-xl" : "text-xl md:text-2xl"
+      )}>
         {task.title}
       </h2>
 
-      {task.result_definition && (
-        <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">
+      {task.result_definition && !compact && (
+        <p className="mt-2 text-xs leading-snug text-muted line-clamp-2">
           {task.result_definition}
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-wider text-muted">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-muted">
         <span>
           до <span className="num text-foreground/80">{formatDateRu(task.deadline)}</span>
         </span>
         <span>
-          +<span className="num text-accent">{task.xp ?? 25}</span> XP
+          +<span className="num text-accent-bright">{task.xp ?? 25}</span> XP
         </span>
-        {started && (
-          <span className="text-ok">в работе</span>
-        )}
+        {started && <span className="text-ok">в работе</span>}
       </div>
 
-      <div className="mt-6 flex flex-col gap-2 md:flex-row">
-        <Button
-          onClick={onStart}
-          variant={started ? "outline" : "outline"}
+      <div className="mt-auto pt-3 space-y-2">
+        <div className="flex gap-2">
+          <Button
+            onClick={onStart}
+            variant="outline"
+            size="sm"
+            className={cn("flex-1", pulse && !started && "animate-pulse-glow")}
+            disabled={started}
+          >
+            <Play className="mr-1.5 h-3.5 w-3.5" />
+            {started ? "В работе" : "Начать"}
+          </Button>
+          <Button onClick={onDone} size="sm" className="flex-1">
+            <Check className="mr-1.5 h-3.5 w-3.5" />
+            Сделано
+          </Button>
+        </div>
+        <button
+          onClick={onSnooze}
+          disabled={snoozeBudget <= 0}
           className={cn(
-            "w-full md:flex-1",
-            pulse && !started && "animate-pulse"
+            "w-full text-center font-mono text-[10px] uppercase tracking-wider transition-colors",
+            snoozeBudget > 0
+              ? "text-muted hover:text-pink-bright"
+              : "text-muted/50"
           )}
-          disabled={started}
         >
-          <Play className="mr-2 h-4 w-4" />
-          {started ? "Уже в работе" : "Начать"}
-        </Button>
-        <Button onClick={onDone} className="w-full md:flex-1">
-          <Check className="mr-2 h-4 w-4" />
-          Сделано
-        </Button>
+          {snoozeBudget > 0
+            ? `Не сегодня → (${snoozeBudget}/3)`
+            : "Снуз исчерпан"}
+        </button>
       </div>
-
-      <button
-        onClick={onSnooze}
-        disabled={snoozeBudget <= 0}
-        className={cn(
-          "mt-4 w-full text-center font-mono text-[11px] uppercase tracking-wider transition-colors",
-          snoozeBudget > 0
-            ? "text-muted hover:text-foreground"
-            : "text-muted/50 cursor-not-allowed"
-        )}
-      >
-        {snoozeBudget > 0
-          ? `Не сегодня → (осталось ${snoozeBudget} из 3)`
-          : "Снуз исчерпан. Сделай сегодня."}
-      </button>
     </div>
   );
 }

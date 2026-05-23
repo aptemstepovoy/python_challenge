@@ -7,9 +7,11 @@
   body {
     background: #0a0814;
     color: #ece8f5;
+    font-size: 16px;
   }
   body {
     font-family: var(--font-inter), Inter, system-ui, sans-serif;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     background-image:
@@ -27,6 +29,15 @@
   }
   h1, h2, h3 {
     letter-spacing: 0.01em;
+    font-weight: 500;
+  }
+  /* Bump weights for readability on dark bg */
+  .font-mono {
+    font-weight: 500;
+  }
+  /* Bigger muted label legibility */
+  .text-muted {
+    color: #a39bb8;
   }
 }
 

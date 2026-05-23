@@ -4,22 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          "bg-gold-fill text-background border border-accent-bright shadow-gold hover:shadow-gold-lg active:translate-y-px",
+          "bg-gradient-to-br from-violet to-pink text-white border border-violet-bright shadow-glow hover:shadow-glow-lg active:translate-y-px",
         outline:
-          "border border-border-bright bg-transparent text-foreground hover:border-accent hover:text-accent-bright hover:shadow-gold",
-        ghost: "hover:bg-surface-2 hover:text-accent-bright",
+          "border border-border-bright bg-surface-2/50 text-foreground hover:border-accent hover:text-accent-bright hover:bg-surface-2",
+        ghost: "text-foreground hover:bg-surface-2 hover:text-accent-bright",
         danger:
-          "bg-danger text-foreground border border-danger-bright hover:opacity-90",
+          "bg-gradient-to-br from-danger to-pink text-white border border-danger-bright hover:opacity-90",
       },
       size: {
-        default: "h-9 px-4",
+        default: "h-10 px-5 text-sm",
         sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-6",
+        lg: "h-12 px-7 text-base",
         icon: "h-9 w-9",
       },
     },

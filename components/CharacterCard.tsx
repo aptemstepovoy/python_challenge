@@ -9,7 +9,6 @@ import {
   progressWithinLevel,
 } from "@/lib/xp";
 import { Avatar, useAvatarState } from "@/components/Avatar";
-import { cn } from "@/lib/utils";
 
 const TITLES: Record<number, string> = {
   1: "Новичок",
@@ -41,14 +40,14 @@ function GameBar({
         style={{
           width: `${pct}%`,
           background: fill,
-          boxShadow: `0 0 10px ${glow}, inset 0 1px 0 rgba(255,255,255,0.25)`,
+          boxShadow: `0 0 8px ${glow}, inset 0 1px 0 rgba(255,255,255,0.25)`,
         }}
       />
     </div>
   );
 }
 
-export function CharacterCard({ compact = false }: { compact?: boolean }) {
+export function CharacterCard() {
   const xp = useStore((s) => s.xp);
   const tasks = useStore((s) => s.tasks);
   const habits = useStore((s) => s.habits);
@@ -68,16 +67,16 @@ export function CharacterCard({ compact = false }: { compact?: boolean }) {
   }, [tasks, habits, habitLogs]);
 
   return (
-    <div className="panel-hero corners relative overflow-hidden rounded-lg p-4">
+    <div className="panel-hero corners relative overflow-hidden rounded-md p-3 md:p-4 h-full flex flex-col">
       <div className="pointer-events-none absolute inset-0 bg-noise opacity-60" />
 
-      <div className="relative space-y-2.5">
+      <div className="relative space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
-            HP · цель {bossInfo ? bossInfo.boss.name : "—"}
+          <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
+            HP {bossInfo ? `· ${bossInfo.boss.name}` : ""}
           </div>
-          <div className="num text-[10px] text-foreground/90">
-            {bossInfo ? `${bossInfo.hpRemaining} / ${bossInfo.boss.total_hp}` : "—"}
+          <div className="num text-[11px] text-foreground/90">
+            {bossInfo ? `${bossInfo.hpRemaining}/${bossInfo.boss.total_hp}` : "—"}
           </div>
         </div>
         <GameBar
@@ -87,12 +86,12 @@ export function CharacterCard({ compact = false }: { compact?: boolean }) {
           glow="rgba(248,113,113,0.5)"
         />
 
-        <div className="flex items-baseline justify-between">
-          <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted">
-            XP · L{lvl.num} {TITLES[lvl.num]}
+        <div className="flex items-baseline justify-between pt-1">
+          <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
+            XP · L{lvl.num}
           </div>
-          <div className="num text-[10px] text-foreground/90">
-            {xpInLevel} / {xpRange}
+          <div className="num text-[11px] text-foreground/90">
+            {xpInLevel}/{xpRange}
           </div>
         </div>
         <GameBar
@@ -103,25 +102,19 @@ export function CharacterCard({ compact = false }: { compact?: boolean }) {
         />
       </div>
 
-      <div className="relative mt-3 flex flex-col items-center">
+      <div className="relative mt-2 flex flex-1 flex-col items-center justify-center">
         <div
           className="relative"
-          style={{
-            filter: `drop-shadow(0 0 20px ${a.glow}88)`,
-          }}
+          style={{ filter: `drop-shadow(0 0 16px ${a.glow}99)` }}
         >
-          <Avatar size={compact ? 120 : 140} />
+          <Avatar size={110} />
         </div>
-        <div className="mt-1 text-center">
-          <div className="display text-lg leading-none text-foreground text-glow">
+        <div className="text-center mt-1">
+          <div className="display text-base leading-none text-foreground text-glow">
             Артём
           </div>
-          <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
-            {a.weightTier === "lean"
-              ? "тонкий силуэт"
-              : a.weightTier === "mid"
-                ? "в форме"
-                : "стартовая форма"}
+          <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
+            {TITLES[lvl.num]}
           </div>
         </div>
       </div>

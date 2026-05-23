@@ -15,54 +15,56 @@ export function AchievementCard({
   return (
     <div
       className={cn(
-        "rounded border p-4 transition-colors",
+        "rounded-md border p-5 transition-colors",
         unlocked
-          ? "border-accent/40 bg-accent/5"
-          : "border-border bg-surface"
+          ? "panel-bright border-accent/50"
+          : "panel border-border"
       )}
     >
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between">
         <div
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded",
-            unlocked ? "bg-accent text-background" : "bg-surface-2 text-muted"
+            "flex h-10 w-10 items-center justify-center rounded-md",
+            unlocked
+              ? "bg-gradient-to-br from-violet to-pink text-white shadow-glow"
+              : "bg-surface-2 text-muted"
           )}
         >
           {unlocked ? (
-            <Trophy className="h-4 w-4" strokeWidth={2.5} />
+            <Trophy className="h-5 w-5" strokeWidth={2.5} />
           ) : (
             <Lock className="h-4 w-4" />
           )}
         </div>
         {def.reward_xp > 0 && (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
-            +<span className="num text-accent">{def.reward_xp}</span> XP
+          <span className="font-mono text-xs uppercase tracking-wider text-muted">
+            +<span className="num text-accent-bright">{def.reward_xp}</span> XP
           </span>
         )}
       </div>
       <div
         className={cn(
-          "display text-sm",
+          "display text-lg leading-tight",
           unlocked ? "text-foreground text-glow-soft" : "text-muted"
         )}
       >
         {def.name}
       </div>
-      <div className="mt-1 text-[11px] text-muted">{def.description}</div>
+      <div className="mt-1.5 text-sm text-muted">{def.description}</div>
       <div className="ornament my-3" />
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted">
+      <div className="font-mono text-[11px] uppercase tracking-wider text-muted">
         Награда в жизни
       </div>
       <div
         className={cn(
-          "mt-1 text-[12px] leading-snug",
-          unlocked ? "text-accent-bright" : "text-muted/80"
+          "mt-1.5 text-sm leading-snug",
+          unlocked ? "text-accent-bright" : "text-foreground/60"
         )}
       >
         {def.real_reward}
       </div>
       {unlocked && (
-        <div className="mt-2 font-mono text-[9px] uppercase tracking-wider text-accent/80">
+        <div className="mt-3 font-mono text-[11px] uppercase tracking-wider text-accent">
           ◆ получено
         </div>
       )}

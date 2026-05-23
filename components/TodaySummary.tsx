@@ -15,7 +15,6 @@ type Row = {
   color: string;
   label: string;
   value: string;
-  big?: boolean;
 };
 
 export function TodaySummary() {
@@ -48,7 +47,6 @@ export function TodaySummary() {
         t.completed_at &&
         t.completed_at.slice(0, 10) === todayISO
     ).length;
-    const doneTotal = tasks.filter((t) => t.status === "done").length;
 
     const open = tasks.filter((t) => t.status !== "done").length;
 
@@ -57,35 +55,35 @@ export function TodaySummary() {
         icon: Flame,
         color: "text-pink-bright",
         label: bestHabit && bestHabit.streak > 0
-          ? `${bestHabit.name}`
+          ? bestHabit.name
           : "Лучший streak",
         value: bestHabit && bestHabit.streak > 0
-          ? `${bestHabit.streak} ${bestHabit.streak === 1 ? "день" : bestHabit.streak < 5 ? "дня" : "дней"} подряд`
-          : "пока нет",
+          ? `${bestHabit.streak} дн.`
+          : "—",
       },
       {
         icon: CheckCircle2,
         color: "text-accent-bright",
-        label: "Привычки сегодня",
+        label: "Привычки",
         value: `${ratio.done} / ${ratio.total}`,
       },
       {
         icon: Scale,
         color: "text-cyan-bright",
-        label: "Вес от старта",
-        value: wDelta === 0 ? "± 0 кг" : `${wDelta > 0 ? "+" : ""}${wDelta} кг`,
+        label: "Вес",
+        value: wDelta === 0 ? "± 0 кг" : `${wDelta > 0 ? "+" : ""}${wDelta}`,
       },
       {
         icon: Zap,
         color: "text-ok-bright",
-        label: "Задачи сегодня",
-        value: `${doneToday} закрыто`,
+        label: "Закрыто",
+        value: String(doneToday),
       },
       {
         icon: Target,
         color: "text-violet-bright",
-        label: "Открыто всего",
-        value: `${open} задач`,
+        label: "Открыто",
+        value: String(open),
       },
     ];
 
@@ -93,13 +91,13 @@ export function TodaySummary() {
   }, [tasks, habits, habitLogs, kgis]);
 
   return (
-    <div className="panel rounded-lg p-4 md:p-5">
-      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+    <div className="panel rounded-md p-3 md:p-4 h-full flex flex-col">
+      <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
         ◆ Сводка
       </div>
-      <ul className="space-y-2.5">
+      <ul className="flex-1 space-y-2">
         {rows.map((r) => (
-          <li key={r.label} className="flex items-center gap-3">
+          <li key={r.label} className="flex items-center gap-2.5">
             <div
               className={cn(
                 "flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-2",
@@ -109,12 +107,12 @@ export function TodaySummary() {
               <r.icon className="h-3.5 w-3.5" strokeWidth={2.2} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-mono text-[9px] uppercase tracking-wider text-muted">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-muted truncate">
                 {r.label}
               </div>
-              <div className="num text-sm text-foreground truncate">
-                {r.value}
-              </div>
+            </div>
+            <div className="num text-sm text-foreground whitespace-nowrap">
+              {r.value}
             </div>
           </li>
         ))}
