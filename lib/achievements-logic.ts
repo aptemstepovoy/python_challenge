@@ -13,6 +13,7 @@ export type AchievementDef = {
   name: string;
   description: string;
   reward_xp: number;
+  real_reward: string;
 };
 
 export const ACHIEVEMENTS: AchievementDef[] = [
@@ -21,90 +22,105 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     name: "Первый шаг",
     description: "Закрыть первую задачу плана",
     reward_xp: 25,
+    real_reward: "Любимый кофе сегодня — за счёт себя-будущего",
   },
   {
     id: "level_2",
     name: "Оператор",
     description: "Достичь уровня 2 (500 XP)",
     reward_xp: 100,
+    real_reward: "Заказать ужин в любимом месте",
   },
   {
     id: "level_3",
     name: "Архитектор",
     description: "Достичь уровня 3 (1500 XP)",
     reward_xp: 200,
+    real_reward: "Купить книгу или мини-курс, который давно хотел",
   },
   {
     id: "perfect_day",
     name: "Идеальный день",
     description: "Все daily-привычки за один день",
     reward_xp: 50,
+    real_reward: "30 минут чистого ничегонеделания без вины",
   },
   {
     id: "perfect_week",
     name: "Идеальная неделя",
     description: "7 идеальных дней подряд",
     reward_xp: 300,
+    real_reward: "Выходной без задач — кино, баня или прогулка",
   },
   {
     id: "steel_30",
     name: "Стальной характер",
     description: "30 дней streak любой daily-привычки",
     reward_xp: 200,
+    real_reward: "Новая одежда или гаджет до 5000₽",
   },
   {
     id: "content_100",
     name: "Контент-машина",
     description: "100 дней streak привычки «Контент»",
     reward_xp: 500,
+    real_reward: "Хорошая камера/микрофон до 30 000₽",
   },
   {
     id: "polyglot_100h",
     name: "Полиглот",
     description: "100 часов английского суммарно",
     reward_xp: 300,
+    real_reward: "Месяц с tutor-носителем для разгона B2",
   },
   {
     id: "athlete_50",
     name: "Атлет",
     description: "50 тренировок выполнено",
     reward_xp: 300,
+    real_reward: "Спортивная экипировка или массаж",
   },
   {
     id: "outreach_master",
     name: "Outreach-мастер",
     description: "Закрыт босс «Найм»",
     reward_xp: 400,
+    real_reward: "Праздничный ужин с семьёй / партнёром",
   },
   {
     id: "clean_week_sugar",
     name: "Чистая неделя",
     description: "7 дней подряд без сахара",
     reward_xp: 100,
+    real_reward: "Качественная плитка тёмного шоколада 85%+",
   },
   {
     id: "boss_naym",
     name: "Победитель Найма",
     description: "Босс «Найм» побеждён",
     reward_xp: 0,
+    real_reward: "Новый ноутбук / монитор / рабочее кресло",
   },
   {
     id: "boss_telo",
     name: "Хозяин тела",
     description: "Босс «Тело» побеждён",
     reward_xp: 0,
+    real_reward: "Полный гардероб обновить под новый размер",
   },
   {
     id: "boss_bali",
     name: "Бали-резидент",
     description: "Босс «Бали» побеждён",
     reward_xp: 0,
+    real_reward: "Первая неделя на Бали — без планов, только адаптация",
   },
   {
     id: "boss_product",
     name: "Создатель",
     description: "Босс «Продукт» побеждён",
     reward_xp: 0,
+    real_reward: "Длинное путешествие с семьёй на 2+ недели",
   },
 ];
 

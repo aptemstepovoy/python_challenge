@@ -29,7 +29,7 @@ export default function DashboardPage() {
     <div className="p-4 space-y-6 md:p-10 md:space-y-8">
       <header className="flex flex-col gap-2 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between md:pb-6">
         <div>
-          <h1 className="font-mono text-xl tracking-wider text-foreground md:text-2xl">
+          <h1 className="display text-2xl text-foreground text-glow md:text-3xl">
             К свободе через систему
           </h1>
           <p className="mt-1 text-sm text-muted">

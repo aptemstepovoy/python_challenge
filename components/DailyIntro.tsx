@@ -18,10 +18,10 @@ import { ru } from "date-fns/locale";
 import { Sun, Moon, Sunset } from "lucide-react";
 
 function greeting(hour: number): { word: string; Icon: typeof Sun } {
-  if (hour < 5) return { word: "Ночи", Icon: Moon };
-  if (hour < 12) return { word: "Утра", Icon: Sun };
-  if (hour < 18) return { word: "Дня", Icon: Sun };
-  return { word: "Вечера", Icon: Sunset };
+  if (hour < 5) return { word: "Доброй ночи", Icon: Moon };
+  if (hour < 12) return { word: "Доброе утро", Icon: Sun };
+  if (hour < 18) return { word: "Добрый день", Icon: Sun };
+  return { word: "Добрый вечер", Icon: Sunset };
 }
 
 export function DailyIntro() {

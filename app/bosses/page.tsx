@@ -17,7 +17,7 @@ export default function BossesPage() {
   return (
     <div className="p-4 space-y-6 md:p-10 md:space-y-8">
       <header className="border-b border-border pb-5 md:pb-6">
-        <h1 className="font-mono text-xl tracking-wider text-foreground md:text-2xl">
+        <h1 className="display text-2xl text-foreground text-glow md:text-3xl">
           Боссы
         </h1>
         <p className="mt-1 text-sm text-muted">

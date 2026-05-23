@@ -15,7 +15,10 @@ const items = [
 export function BottomTabBar() {
   const pathname = usePathname();
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-border bg-surface md:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-border-bright bg-panel md:hidden"
+      style={{ boxShadow: "0 -8px 24px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(243,201,122,0.06)" }}
+    >
       {items.map((item) => {
         const active =
           pathname === item.href || pathname?.startsWith(item.href + "/");
@@ -24,9 +27,9 @@ export function BottomTabBar() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex-1 py-3 text-center font-mono text-[10px] uppercase tracking-wider transition-colors",
+              "flex-1 py-3 text-center font-mono text-[10px] uppercase tracking-[0.18em] transition-colors",
               active
-                ? "text-accent border-t-2 border-accent -mt-px"
+                ? "text-accent-bright border-t-2 border-accent -mt-px text-glow-soft"
                 : "text-muted"
             )}
           >

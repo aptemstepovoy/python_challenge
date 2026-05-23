@@ -18,9 +18,12 @@ export function MobileTopBar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-surface px-4 py-3 md:hidden">
+    <header
+      className="sticky top-0 z-40 flex items-center justify-between border-b border-border-bright bg-panel px-4 py-3 md:hidden"
+      style={{ boxShadow: "0 8px 24px -8px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(243,201,122,0.06)" }}
+    >
       <div className="flex items-baseline gap-2">
-        <span className="font-mono text-sm tracking-[0.2em] text-foreground">
+        <span className="display text-base tracking-[0.18em] text-accent-bright text-glow-soft">
           OPERATOR
         </span>
         <span className="font-mono text-[9px] uppercase tracking-wider text-muted">

@@ -33,16 +33,17 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-border bg-surface px-5 py-6 md:flex">
+    <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-border bg-panel px-5 py-6 md:flex">
       <div>
-        <div className="mb-1 font-mono text-lg tracking-[0.2em] text-foreground">
+        <div className="display mb-1 text-lg text-accent-bright text-glow tracking-[0.18em]">
           OPERATOR
         </div>
-        <div className="mb-10 text-xs leading-snug text-muted">
+        <div className="mb-6 text-[11px] italic leading-snug text-muted">
           К свободе через систему
         </div>
+        <div className="ornament mb-6" />
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-0.5">
           {items.map((item) => {
             const active = pathname === item.href || pathname?.startsWith(item.href + "/");
             return (
@@ -50,10 +51,10 @@ export function Sidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded px-3 py-2 font-mono text-sm uppercase tracking-wider transition-colors",
+                  "rounded px-3 py-2 font-mono text-[12px] uppercase tracking-[0.15em] transition-colors",
                   active
-                    ? "bg-surface-2 text-accent border-l-2 border-accent pl-[10px]"
-                    : "text-muted hover:bg-surface-2 hover:text-foreground"
+                    ? "bg-surface-2 text-accent-bright border-l-2 border-accent pl-[10px] text-glow-soft"
+                    : "text-muted hover:bg-surface-2 hover:text-accent-bright"
                 )}
               >
                 {item.label}

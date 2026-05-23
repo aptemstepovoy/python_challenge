@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Forum } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { MobileTopBar } from "@/components/MobileTopBar";
@@ -18,6 +18,13 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
   variable: "--font-jetbrains",
   display: "swap",
+});
+
+const forum = Forum({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -53,7 +60,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="dark">
-      <body className={`${inter.variable} ${jetbrains.variable}`}>
+      <body className={`${inter.variable} ${jetbrains.variable} ${forum.variable}`}>
         <div className="flex min-h-screen flex-col md:flex-row">
           <MobileTopBar />
           <Sidebar />

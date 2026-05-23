@@ -9,11 +9,12 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-accent text-background hover:bg-accent-dim",
+          "bg-gold-fill text-background border border-accent-bright shadow-gold hover:shadow-gold-lg active:translate-y-px",
         outline:
-          "border border-border bg-transparent hover:border-accent hover:text-accent",
-        ghost: "hover:bg-surface-2 hover:text-foreground",
-        danger: "bg-danger text-foreground hover:opacity-90",
+          "border border-border-bright bg-transparent text-foreground hover:border-accent hover:text-accent-bright hover:shadow-gold",
+        ghost: "hover:bg-surface-2 hover:text-accent-bright",
+        danger:
+          "bg-danger text-foreground border border-danger-bright hover:opacity-90",
       },
       size: {
         default: "h-9 px-4",

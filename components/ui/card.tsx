@@ -6,7 +6,7 @@ export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
     <div
       ref={ref}
       className={cn(
-        "rounded-md border border-border bg-surface text-foreground",
+        "panel rounded-md text-foreground",
         className
       )}
       {...props}
@@ -26,7 +26,10 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttribut
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn("font-mono text-sm uppercase tracking-wider text-muted", className)}
+      className={cn(
+        "font-mono text-[11px] uppercase tracking-[0.2em] text-accent-bright/80",
+        className
+      )}
       {...props}
     />
   )

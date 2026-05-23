@@ -42,16 +42,28 @@ export function AchievementCard({
       </div>
       <div
         className={cn(
-          "text-sm",
-          unlocked ? "text-foreground" : "text-muted"
+          "display text-sm",
+          unlocked ? "text-foreground text-glow-soft" : "text-muted"
         )}
       >
         {def.name}
       </div>
       <div className="mt-1 text-[11px] text-muted">{def.description}</div>
+      <div className="ornament my-3" />
+      <div className="font-mono text-[10px] uppercase tracking-wider text-muted">
+        Награда в жизни
+      </div>
+      <div
+        className={cn(
+          "mt-1 text-[12px] leading-snug",
+          unlocked ? "text-accent-bright" : "text-muted/80"
+        )}
+      >
+        {def.real_reward}
+      </div>
       {unlocked && (
         <div className="mt-2 font-mono text-[9px] uppercase tracking-wider text-accent/80">
-          получено
+          ◆ получено
         </div>
       )}
     </div>

@@ -54,6 +54,7 @@ type State = {
   addHabit: (habit: Omit<Habit, "id" | "created_at" | "archived">) => void;
   archiveHabit: (id: string) => void;
   unarchiveHabit: (id: string) => void;
+  deleteHabit: (id: string) => void;
   updateHabit: (id: string, patch: Partial<Habit>) => void;
 
   addXP: (amount: number) => void;
@@ -289,6 +290,12 @@ export const useStore = create<State>()(
           habits: s.habits.map((h) =>
             h.id === id ? { ...h, archived: false } : h
           ),
+        })),
+
+      deleteHabit: (id) =>
+        set((s) => ({
+          habits: s.habits.filter((h) => h.id !== id),
+          habitLogs: s.habitLogs.filter((l) => l.habit_id !== id),
         })),
 
       updateHabit: (id, patch) =>
