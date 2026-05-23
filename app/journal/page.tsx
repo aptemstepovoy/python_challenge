@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { JournalForm } from "@/components/JournalForm";
 import { JournalHistory } from "@/components/JournalHistory";
 import { DataIO } from "@/components/DataIO";
+import { AuthBlock } from "@/components/AuthBlock";
 import { useStore } from "@/lib/store";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
@@ -124,6 +125,15 @@ export default function JournalPage() {
           Данные
         </div>
         <DataIO />
+      </section>
+
+      <section className="md:hidden">
+        <div className="mb-4 display text-2xl text-foreground">
+          Аккаунт
+        </div>
+        <div className="panel rounded-md p-5">
+          <AuthBlock />
+        </div>
       </section>
     </div>
   );

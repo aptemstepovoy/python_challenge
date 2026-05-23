@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { levelFromXP, progressWithinLevel } from "@/lib/xp";
 import { CountUp } from "@/components/CountUp";
 import { Progress } from "@/components/ui/progress";
+import { AuthBlock } from "@/components/AuthBlock";
 
 const items = [
   { href: "/today", label: "Сегодня" },
@@ -89,6 +90,9 @@ export function Sidebar() {
         ) : (
           <div className="font-mono uppercase tracking-wider opacity-0">.</div>
         )}
+        <div className="border-t border-border pt-3">
+          <AuthBlock />
+        </div>
       </div>
     </aside>
   );

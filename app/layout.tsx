@@ -1,13 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Forum } from "next/font/google";
-import { Sidebar } from "@/components/Sidebar";
-import { BottomTabBar } from "@/components/BottomTabBar";
-import { MobileTopBar } from "@/components/MobileTopBar";
-import { QuickCapture } from "@/components/QuickCapture";
+import { AppShell } from "@/components/AppShell";
 import { PWARegister } from "@/components/PWARegister";
-import { DailyIntro } from "@/components/DailyIntro";
-import { AchievementToast } from "@/components/AchievementToast";
-import { FocusTimer } from "@/components/FocusTimer";
+import { CloudSync } from "@/components/CloudSync";
 import "./globals.css";
 
 const inter = Inter({
@@ -62,20 +57,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="dark">
-      <body className={`${inter.variable} ${jetbrains.variable} ${forum.variable}`}>
-        <div className="flex min-h-screen flex-col md:flex-row">
-          <MobileTopBar />
-          <Sidebar />
-          <main className="flex-1 overflow-x-hidden pb-24 md:pb-0">
-            {children}
-          </main>
-          <BottomTabBar />
-        </div>
-        <QuickCapture />
+      <body
+        className={`${inter.variable} ${jetbrains.variable} ${forum.variable}`}
+      >
+        <AppShell>{children}</AppShell>
         <PWARegister />
-        <DailyIntro />
-        <AchievementToast />
-        <FocusTimer />
+        <CloudSync />
       </body>
     </html>
   );
