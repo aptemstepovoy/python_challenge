@@ -9,8 +9,9 @@ import {
   perfectDaysStreak,
 } from "@/lib/habits-logic";
 import { uuid } from "@/lib/utils";
+import { computeModifiers } from "@/lib/talents";
 
-const MAX_FREEZES = 3;
+const BASE_MAX_FREEZES = 3;
 
 export function StreakFreezeAutomation() {
   const habits = useStore((s) => s.habits);
@@ -65,10 +66,14 @@ export function StreakFreezeAutomation() {
       return;
     }
     if (tier > lastAwardRef.current) {
-      useStore.setState((s) => ({
-        streakFreezes: Math.min(MAX_FREEZES, s.streakFreezes + 1),
-        streakFreezesEarned: s.streakFreezesEarned + 1,
-      }));
+      useStore.setState((s) => {
+        const mods = computeModifiers(s.talents);
+        const max = BASE_MAX_FREEZES + mods.extraFreezeSlots;
+        return {
+          streakFreezes: Math.min(max, s.streakFreezes + 1),
+          streakFreezesEarned: s.streakFreezesEarned + 1,
+        };
+      });
       lastAwardRef.current = tier;
     }
   }, [habits, habitLogs]);
@@ -76,4 +81,4 @@ export function StreakFreezeAutomation() {
   return null;
 }
 
-export { MAX_FREEZES };
+export { BASE_MAX_FREEZES };

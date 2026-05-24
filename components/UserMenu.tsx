@@ -19,6 +19,8 @@ import {
   Home,
   Snowflake,
   HelpCircle,
+  Sparkle,
+  Package,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,6 +31,8 @@ import { levelFromXP, progressWithinLevel } from "@/lib/xp";
 import { Progress } from "@/components/ui/progress";
 import { CountUp } from "@/components/CountUp";
 import { haptic } from "@/lib/haptics";
+import { TalentTree } from "@/components/TalentTree";
+import { Inventory } from "@/components/Inventory";
 
 function FreezeRow({ count }: { count: number }) {
   const [show, setShow] = useState(false);
@@ -100,6 +104,8 @@ export function UserMenu({
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
   const streakFreezes = useStore((s) => s.streakFreezes);
+  const talentPoints = useStore((s) => s.talentPoints);
+  const inventoryCount = useStore((s) => s.inventory.length);
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -241,7 +247,49 @@ export function UserMenu({
                 Прогресс
               </div>
 
-              <div className="px-2">
+              <TalentTree
+                trigger={
+                  <button
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
+                      "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                    )}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Sparkle className="h-4 w-4 text-accent-bright/70" />
+                      Таланты
+                    </span>
+                    {talentPoints > 0 && (
+                      <span className="flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent-bright">
+                        +{talentPoints}
+                      </span>
+                    )}
+                  </button>
+                }
+              />
+
+              <Inventory
+                trigger={
+                  <button
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
+                      "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                    )}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Package className="h-4 w-4 text-accent-bright/70" />
+                      Инвентарь
+                    </span>
+                    {inventoryCount > 0 && (
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-secondary num">
+                        {inventoryCount}
+                      </span>
+                    )}
+                  </button>
+                }
+              />
+
+              <div className="px-2 pt-1">
                 <FreezeRow count={streakFreezes} />
               </div>
             </div>

@@ -9,12 +9,17 @@ import type {
   DailyJournal,
   DailyQuestsSnapshot,
   DailyXPEntry,
+  DropEvent,
   Habit,
   HabitLog,
   Insight,
+  InventoryEntry,
+  ItemId,
   KGI,
   Status,
   Step,
+  TalentId,
+  TalentRank,
   Task,
   WeeklyReview,
   WeightEntry,
@@ -29,6 +34,9 @@ import { uuid } from "./utils";
 import { habitStreak } from "./habits-logic";
 import { addDailyXP } from "./daily-xp";
 import { generateQuestsForDate } from "./quests";
+import { computeModifiers, getTalent } from "./talents";
+import { DROP_CHANCE, getItem, rollLoot } from "./loot";
+import { levelFromXP } from "./xp";
 
 type State = {
   kgis: KGI[];
@@ -57,6 +65,12 @@ type State = {
   dailyQuests: DailyQuestsSnapshot[];
   streakFreezes: number;
   streakFreezesEarned: number;
+  talentPoints: number;
+  talentPointsEarned: number;
+  talents: TalentRank[];
+  inventory: InventoryEntry[];
+  recentDrops: DropEvent[];
+  lastLevelClaimed: number;
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -95,6 +109,13 @@ type State = {
   completeQuest: (questId: string) => void;
   ensureQuestsForToday: () => void;
 
+  spendTalent: (id: TalentId) => boolean;
+  refundTalent: (id: TalentId) => boolean;
+  consumeRecentDrop: (id: string) => void;
+  useItem: (itemId: ItemId) => boolean;
+  awardItem: (itemId: ItemId) => void;
+  claimLevelRewards: () => void;
+
   resetData: () => void;
 };
 
@@ -108,24 +129,64 @@ const STATUS_CYCLE: Record<Status, Status> = {
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const nowISO = () => new Date().toISOString();
 
-function streakMultiplier(streak: number): number {
-  if (streak >= 30) return 1.5;
-  if (streak >= 7) return 1.25;
-  if (streak >= 3) return 1.1;
+function streakMultiplier(streak: number, boost: number = 0): number {
+  if (streak >= 30) return 1.5 + boost;
+  if (streak >= 7) return 1.25 + boost;
+  if (streak >= 3) return 1.1 + boost;
   return 1.0;
 }
 
-function rollChest(): ChestReward {
+function rollLootAndRecord(
+  state: State,
+  baseChance: number,
+  source: string
+): { inventory: InventoryEntry[]; recentDrops: DropEvent[] } | null {
+  const mods = computeModifiers(state.talents);
+  const effective = baseChance + mods.lootQualityShift * 0.1;
+  const itemId = rollLoot(effective, mods.lootQualityShift);
+  if (!itemId) return null;
+  const existing = state.inventory.find((i) => i.itemId === itemId);
+  const ts = new Date().toISOString();
+  const inv: InventoryEntry[] = existing
+    ? state.inventory.map((i) =>
+        i.itemId === itemId ? { ...i, count: i.count + 1, acquired_at: ts } : i
+      )
+    : [...state.inventory, { itemId, count: 1, acquired_at: ts }];
+  // import getItem dynamically to avoid circular — we'll resolve rarity via items list ID prefix lookup later
+  const it = getItem(itemId);
+  const drop: DropEvent = {
+    id: uuid(),
+    itemId,
+    rarity: it?.rarity ?? "common",
+    ts,
+  };
+  return {
+    inventory: inv,
+    recentDrops: [drop, ...state.recentDrops].slice(0, 12),
+  };
+}
+
+const CHEST_TIERS: Array<{ tier: ChestReward["tier"]; xp: number }> = [
+  { tier: "common", xp: 15 },
+  { tier: "uncommon", xp: 40 },
+  { tier: "rare", xp: 100 },
+  { tier: "epic", xp: 300 },
+  { tier: "legendary", xp: 1000 },
+];
+
+function rollChest(tierShift: number = 0): ChestReward {
   const r = Math.random();
-  if (r < 0.6)
-    return { xp: 15, tier: "common", date: todayISO() };
-  if (r < 0.85)
-    return { xp: 40, tier: "uncommon", date: todayISO() };
-  if (r < 0.95)
-    return { xp: 100, tier: "rare", date: todayISO() };
-  if (r < 0.99)
-    return { xp: 300, tier: "epic", date: todayISO() };
-  return { xp: 1000, tier: "legendary", date: todayISO() };
+  let idx = 0;
+  if (r < 0.6) idx = 0;
+  else if (r < 0.85) idx = 1;
+  else if (r < 0.95) idx = 2;
+  else if (r < 0.99) idx = 3;
+  else idx = 4;
+  if (tierShift > 0 && Math.random() < tierShift && idx < CHEST_TIERS.length - 1) {
+    idx += 1;
+  }
+  const t = CHEST_TIERS[idx];
+  return { tier: t.tier, xp: t.xp, date: todayISO() };
 }
 
 export const useStore = create<State>()(
@@ -157,6 +218,12 @@ export const useStore = create<State>()(
       dailyQuests: [],
       streakFreezes: 0,
       streakFreezesEarned: 0,
+      talentPoints: 0,
+      talentPointsEarned: 0,
+      talents: [],
+      inventory: [],
+      recentDrops: [],
+      lastLevelClaimed: 1,
 
       setKGI: (id, current_value) =>
         set((s) => ({
@@ -184,11 +251,19 @@ export const useStore = create<State>()(
 
       cycleTaskStatus: (id) =>
         set((s) => {
+          const mods = computeModifiers(s.talents);
           let xpDelta = 0;
+          let rolledLoot = false;
           const tasks = s.tasks.map((t) => {
             if (t.id !== id) return t;
             const next = STATUS_CYCLE[t.status];
-            if (t.status !== "done" && next === "done") xpDelta += t.xp ?? 25;
+            if (t.status !== "done" && next === "done") {
+              const base = t.xp ?? 25;
+              const focusBonus =
+                (t.time_spent_sec ?? 0) >= 25 * 60 ? mods.focusBonus : 0;
+              xpDelta += Math.round(base * mods.taskXPMult * (1 + focusBonus));
+              rolledLoot = true;
+            }
             if (t.status === "done" && next !== "done") xpDelta -= t.xp ?? 25;
             return {
               ...t,
@@ -200,6 +275,9 @@ export const useStore = create<State>()(
                   : t.started_at,
             };
           });
+          const loot = rolledLoot
+            ? rollLootAndRecord(s, DROP_CHANCE.task, "task")
+            : null;
           return {
             tasks,
             xp: Math.max(0, s.xp + xpDelta),
@@ -207,6 +285,7 @@ export const useStore = create<State>()(
               xpDelta > 0
                 ? addDailyXP(s.dailyXPHistory, xpDelta)
                 : s.dailyXPHistory,
+            ...(loot ?? {}),
           };
         }),
 
@@ -244,10 +323,18 @@ export const useStore = create<State>()(
 
       completeTask: (id) =>
         set((s) => {
+          const mods = computeModifiers(s.talents);
           let xpDelta = 0;
+          let rolledLoot = false;
           const tasks = s.tasks.map((t) => {
             if (t.id !== id) return t;
-            if (t.status !== "done") xpDelta += t.xp ?? 25;
+            if (t.status !== "done") {
+              const base = t.xp ?? 25;
+              const focusBonus =
+                (t.time_spent_sec ?? 0) >= 25 * 60 ? mods.focusBonus : 0;
+              xpDelta += Math.round(base * mods.taskXPMult * (1 + focusBonus));
+              rolledLoot = true;
+            }
             return {
               ...t,
               status: "done" as Status,
@@ -255,6 +342,9 @@ export const useStore = create<State>()(
               snoozed_until: undefined,
             };
           });
+          const loot = rolledLoot
+            ? rollLootAndRecord(s, DROP_CHANCE.task, "task")
+            : null;
           return {
             tasks,
             xp: s.xp + xpDelta,
@@ -262,6 +352,7 @@ export const useStore = create<State>()(
               xpDelta > 0
                 ? addDailyXP(s.dailyXPHistory, xpDelta)
                 : s.dailyXPHistory,
+            ...(loot ?? {}),
           };
         }),
 
@@ -333,21 +424,23 @@ export const useStore = create<State>()(
               xp: Math.max(0, s.xp - (habit?.xp_per_completion ?? 0)),
             };
           }
-          // streak BEFORE adding new log
+          const mods = computeModifiers(s.talents);
           const streak = habitStreak(s.habitLogs, habit_id, new Date(d));
-          const mult = streakMultiplier(streak);
+          const mult = streakMultiplier(streak, mods.streakMultBoost);
           const base = habit?.xp_per_completion ?? 0;
-          const earned = Math.round(base * mult);
+          const earned = Math.round(base * mult * mods.habitXPMult);
           const newLog: HabitLog = {
             id: uuid(),
             habit_id,
             date: d,
             completed_at: nowISO(),
           };
+          const loot = rollLootAndRecord(s, DROP_CHANCE.habit, "habit");
           return {
             habitLogs: [...s.habitLogs, newLog],
             xp: s.xp + earned,
             dailyXPHistory: addDailyXP(s.dailyXPHistory, earned),
+            ...(loot ?? {}),
           };
         }),
 
@@ -499,18 +592,29 @@ export const useStore = create<State>()(
         const s = get();
         const today = todayISO();
         if (s.lastChestOpened === today) return null;
-        const reward = rollChest();
+        const mods = computeModifiers(s.talents);
+        const reward = rollChest(mods.chestTierShift);
+        // Double-dip: chance to roll again and merge XP
+        let bonus: ChestReward | null = null;
+        if (mods.chestDoubleChance > 0 && Math.random() < mods.chestDoubleChance) {
+          bonus = rollChest(mods.chestTierShift);
+        }
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yISO = yesterday.toISOString().slice(0, 10);
         const newStreak = s.lastChestOpened === yISO ? s.chestStreak + 1 : 1;
+        const totalXP = reward.xp + (bonus?.xp ?? 0);
         set({
           lastChestOpened: today,
           chestStreak: newStreak,
-          totalChestsOpened: s.totalChestsOpened + 1,
-          chestHistory: [reward, ...s.chestHistory].slice(0, 30),
-          xp: s.xp + reward.xp,
-          dailyXPHistory: addDailyXP(s.dailyXPHistory, reward.xp),
+          totalChestsOpened: s.totalChestsOpened + 1 + (bonus ? 1 : 0),
+          chestHistory: [
+            ...(bonus ? [bonus] : []),
+            reward,
+            ...s.chestHistory,
+          ].slice(0, 30),
+          xp: s.xp + totalXP,
+          dailyXPHistory: addDailyXP(s.dailyXPHistory, totalXP),
         });
         return reward;
       },
@@ -519,7 +623,8 @@ export const useStore = create<State>()(
         const s = get();
         const today = todayISO();
         if (s.dailyQuests.find((q) => q.date === today)) return;
-        const quests = generateQuestsForDate(today);
+        const mods = computeModifiers(s.talents);
+        const quests = generateQuestsForDate(today, mods.extraQuest);
         set({
           dailyQuests: [
             { date: today, quests, rewarded: false },
@@ -550,6 +655,131 @@ export const useStore = create<State>()(
           };
         }),
 
+      spendTalent: (id) => {
+        const s = get();
+        if (s.talentPoints <= 0) return false;
+        const def = getTalent(id);
+        if (!def) return false;
+        const existing = s.talents.find((t) => t.id === id);
+        const rank = existing?.rank ?? 0;
+        if (rank >= def.maxRank) return false;
+        const nextTalents = existing
+          ? s.talents.map((t) =>
+              t.id === id ? { ...t, rank: rank + 1 } : t
+            )
+          : [...s.talents, { id, rank: 1 }];
+        set({
+          talents: nextTalents,
+          talentPoints: s.talentPoints - 1,
+        });
+        return true;
+      },
+
+      refundTalent: (id) => {
+        const s = get();
+        const existing = s.talents.find((t) => t.id === id);
+        if (!existing || existing.rank <= 0) return false;
+        const nextTalents = s.talents
+          .map((t) =>
+            t.id === id ? { ...t, rank: t.rank - 1 } : t
+          )
+          .filter((t) => t.rank > 0);
+        set({
+          talents: nextTalents,
+          talentPoints: s.talentPoints + 1,
+        });
+        return true;
+      },
+
+      consumeRecentDrop: (id) =>
+        set((s) => ({
+          recentDrops: s.recentDrops.filter((d) => d.id !== id),
+        })),
+
+      awardItem: (itemId) =>
+        set((s) => {
+          const existing = s.inventory.find((i) => i.itemId === itemId);
+          const ts = nowISO();
+          const inv: InventoryEntry[] = existing
+            ? s.inventory.map((i) =>
+                i.itemId === itemId
+                  ? { ...i, count: i.count + 1, acquired_at: ts }
+                  : i
+              )
+            : [...s.inventory, { itemId, count: 1, acquired_at: ts }];
+          return { inventory: inv };
+        }),
+
+      useItem: (itemId) => {
+        const s = get();
+        const entry = s.inventory.find((i) => i.itemId === itemId);
+        if (!entry || entry.count <= 0) return false;
+        const dec = (): InventoryEntry[] =>
+          s.inventory
+            .map((i) =>
+              i.itemId === itemId ? { ...i, count: i.count - 1 } : i
+            )
+            .filter((i) => i.count > 0);
+        switch (itemId) {
+          case "extra_freeze":
+            set({
+              streakFreezes: Math.min(5, s.streakFreezes + 1),
+              streakFreezesEarned: s.streakFreezesEarned + 1,
+              inventory: dec(),
+            });
+            return true;
+          case "quest_reroll": {
+            const today = todayISO();
+            const mods = computeModifiers(s.talents);
+            const quests = generateQuestsForDate(
+              today + "-r" + Math.random().toString(36).slice(2, 6),
+              mods.extraQuest
+            );
+            set({
+              dailyQuests: [
+                { date: today, quests, rewarded: false },
+                ...s.dailyQuests.filter((q) => q.date !== today),
+              ].slice(0, 30),
+              inventory: dec(),
+            });
+            return true;
+          }
+          case "xp_potion":
+            set({
+              xp: s.xp + 200,
+              dailyXPHistory: addDailyXP(s.dailyXPHistory, 200),
+              inventory: dec(),
+            });
+            return true;
+          case "chest_key": {
+            const mods = computeModifiers(s.talents);
+            const reward = rollChest(mods.chestTierShift);
+            set({
+              chestHistory: [reward, ...s.chestHistory].slice(0, 30),
+              totalChestsOpened: s.totalChestsOpened + 1,
+              xp: s.xp + reward.xp,
+              dailyXPHistory: addDailyXP(s.dailyXPHistory, reward.xp),
+              inventory: dec(),
+            });
+            return true;
+          }
+          default:
+            return false;
+        }
+      },
+
+      claimLevelRewards: () => {
+        const s = get();
+        const curLevel = levelFromXP(s.xp).num;
+        if (curLevel <= s.lastLevelClaimed) return;
+        const points = curLevel - s.lastLevelClaimed;
+        set({
+          talentPoints: s.talentPoints + points,
+          talentPointsEarned: s.talentPointsEarned + points,
+          lastLevelClaimed: curLevel,
+        });
+      },
+
       resetData: () =>
         set({
           kgis: initialKGIs,
@@ -577,11 +807,17 @@ export const useStore = create<State>()(
           dailyQuests: [],
           streakFreezes: 0,
           streakFreezesEarned: 0,
+          talentPoints: 0,
+          talentPointsEarned: 0,
+          talents: [],
+          inventory: [],
+          recentDrops: [],
+          lastLevelClaimed: 1,
         }),
     }),
     {
-      name: "operator-store-v7",
-      version: 7,
+      name: "operator-store-v8",
+      version: 8,
     }
   )
 );

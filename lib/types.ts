@@ -115,6 +115,54 @@ export type DailyQuestsSnapshot = {
   rewarded: boolean;
 };
 
+export type TalentId =
+  | "spark"
+  | "winter_stash"
+  | "streak_lord"
+  | "swift_hand"
+  | "focus_burn"
+  | "warlord"
+  | "luck"
+  | "double_dip"
+  | "looter"
+  | "ritual"
+  | "ideal"
+  | "ascendant";
+
+export type TalentRank = { id: TalentId; rank: number };
+
+export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+
+export type ItemId =
+  | "shard_violet"
+  | "shard_cyan"
+  | "shard_pink"
+  | "title_pathfinder"
+  | "title_nocturnal"
+  | "aura_violet"
+  | "aura_gold"
+  | "frame_obsidian"
+  | "title_wanderer"
+  | "extra_freeze"
+  | "quest_reroll"
+  | "xp_potion"
+  | "chest_key"
+  | "trophy_first_boss"
+  | "crown_eternal";
+
+export type InventoryEntry = {
+  itemId: ItemId;
+  count: number;
+  acquired_at: string;
+};
+
+export type DropEvent = {
+  id: string;
+  itemId: ItemId;
+  rarity: Rarity;
+  ts: string;
+};
+
 export type HabitFrequency = "daily" | "weekly_n" | "custom_days";
 
 export type Habit = {

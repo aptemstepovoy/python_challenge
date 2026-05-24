@@ -9,14 +9,7 @@ import {
   progressWithinLevel,
 } from "@/lib/xp";
 import { Avatar, useAvatarState } from "@/components/Avatar";
-
-const TITLES: Record<number, string> = {
-  1: "Новичок",
-  2: "Оператор",
-  3: "Архитектор",
-  4: "Стратег",
-  5: "Свободный",
-};
+import { Sparkle } from "lucide-react";
 
 function GameBar({
   current,
@@ -52,6 +45,7 @@ export function CharacterCard() {
   const tasks = useStore((s) => s.tasks);
   const habits = useStore((s) => s.habits);
   const habitLogs = useStore((s) => s.habitLogs);
+  const talentPoints = useStore((s) => s.talentPoints);
   const a = useAvatarState();
 
   const lvl = levelFromXP(xp);
@@ -69,6 +63,13 @@ export function CharacterCard() {
   return (
     <div className="panel-hero corners relative overflow-hidden rounded-md p-3 md:p-4 h-full flex flex-col">
       <div className="pointer-events-none absolute inset-0 bg-noise opacity-60" />
+
+      {talentPoints > 0 && (
+        <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded-full border border-accent-bright/70 bg-accent/25 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent-bright shadow-glow">
+          <Sparkle className="h-2.5 w-2.5" strokeWidth={2.5} />
+          +{talentPoints}
+        </div>
+      )}
 
       <div className="relative space-y-1.5">
         <div className="flex items-baseline justify-between">
@@ -116,7 +117,7 @@ export function CharacterCard() {
             Артём
           </div>
           <div className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
-            {TITLES[lvl.num]}
+            {lvl.title}
           </div>
         </div>
       </div>

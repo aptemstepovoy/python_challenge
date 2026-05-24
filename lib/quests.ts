@@ -39,16 +39,23 @@ function pickOne(arr: QuestDef[], seed: number, salt: number): QuestDef {
   return arr[(seed + salt * 31) % arr.length];
 }
 
-export function generateQuestsForDate(dateISO: string): Quest[] {
+export function generateQuestsForDate(
+  dateISO: string,
+  extra: number = 0
+): Quest[] {
   const easy = POOL.filter((q) => q.tier === "easy");
   const med = POOL.filter((q) => q.tier === "med");
   const big = POOL.filter((q) => q.tier === "big");
   const seed = hashDate(dateISO);
-  return [
+  const picks: QuestDef[] = [
     pickOne(easy, seed, 1),
     pickOne(med, seed, 7),
     pickOne(big, seed, 13),
-  ].map((q) => ({
+  ];
+  for (let i = 0; i < extra; i++) {
+    picks.push(pickOne(easy, seed, 17 + i * 11));
+  }
+  return picks.map((q) => ({
     id: q.id,
     name: q.name,
     goal: q.goal,
