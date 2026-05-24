@@ -21,6 +21,7 @@ import {
   HelpCircle,
   Sparkle,
   Package,
+  Trash2,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -106,8 +107,10 @@ export function UserMenu({
   const streakFreezes = useStore((s) => s.streakFreezes);
   const talentPoints = useStore((s) => s.talentPoints);
   const inventoryCount = useStore((s) => s.inventory.length);
+  const resetData = useStore((s) => s.resetData);
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [resetArmed, setResetArmed] = useState(false);
 
   useEffect(() => {
     if (!SUPABASE_ENABLED) return;
@@ -292,6 +295,49 @@ export function UserMenu({
               <div className="px-2 pt-1">
                 <FreezeRow count={streakFreezes} />
               </div>
+            </div>
+
+            <div className="ornament" />
+
+            <div className="space-y-2">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-secondary px-2">
+                Опасная зона
+              </div>
+              {!resetArmed ? (
+                <button
+                  onClick={() => setResetArmed(true)}
+                  className="flex w-full items-center gap-3 rounded-md border border-danger/30 bg-danger/5 px-3 py-2.5 text-sm text-danger-bright hover:bg-danger/15 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Сбросить весь прогресс
+                </button>
+              ) : (
+                <div className="rounded-md border border-danger/60 bg-danger/10 p-3 space-y-2">
+                  <div className="text-sm text-foreground leading-snug">
+                    XP, ачивки, привычки, задачи, сундуки, таланты,
+                    инвентарь — всё удалится. Восстановить нельзя.
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        resetData();
+                        setResetArmed(false);
+                        haptic("error");
+                        setOpen(false);
+                      }}
+                      className="flex-1 rounded-md border border-danger bg-danger/30 px-3 py-2 text-sm font-mono uppercase tracking-wider text-danger-bright hover:bg-danger/40"
+                    >
+                      Да, обнулить
+                    </button>
+                    <button
+                      onClick={() => setResetArmed(false)}
+                      className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-mono uppercase tracking-wider text-foreground hover:border-accent-dim"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {SUPABASE_ENABLED ? (

@@ -117,17 +117,25 @@ export type DailyQuestsSnapshot = {
 
 export type TalentId =
   | "spark"
+  | "morning_ritual"
   | "winter_stash"
   | "streak_lord"
+  | "ascendant"
   | "swift_hand"
+  | "speed_needle"
   | "focus_burn"
+  | "deep_focus"
   | "warlord"
   | "luck"
+  | "gatherer"
   | "double_dip"
+  | "prospector"
   | "looter"
   | "ritual"
+  | "alchemist"
   | "ideal"
-  | "ascendant";
+  | "double_reward"
+  | "archon";
 
 export type TalentRank = { id: TalentId; rank: number };
 

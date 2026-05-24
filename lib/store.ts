@@ -34,7 +34,7 @@ import { uuid } from "./utils";
 import { habitStreak } from "./habits-logic";
 import { addDailyXP } from "./daily-xp";
 import { generateQuestsForDate } from "./quests";
-import { computeModifiers, getTalent } from "./talents";
+import { computeModifiers, costFor, getTalent } from "./talents";
 import { DROP_CHANCE, getItem, rollLoot } from "./loot";
 import { levelFromXP } from "./xp";
 
@@ -142,7 +142,7 @@ function rollLootAndRecord(
   source: string
 ): { inventory: InventoryEntry[]; recentDrops: DropEvent[] } | null {
   const mods = computeModifiers(state.talents);
-  const effective = baseChance + mods.lootQualityShift * 0.1;
+  const effective = baseChance + mods.lootDropBonus;
   const itemId = rollLoot(effective, mods.lootQualityShift);
   if (!itemId) return null;
   const existing = state.inventory.find((i) => i.itemId === itemId);
@@ -174,7 +174,10 @@ const CHEST_TIERS: Array<{ tier: ChestReward["tier"]; xp: number }> = [
   { tier: "legendary", xp: 1000 },
 ];
 
-function rollChest(tierShift: number = 0): ChestReward {
+function rollChest(
+  tierShift: number = 0,
+  guaranteeMinIdx: number = 0
+): ChestReward {
   const r = Math.random();
   let idx = 0;
   if (r < 0.6) idx = 0;
@@ -184,6 +187,9 @@ function rollChest(tierShift: number = 0): ChestReward {
   else idx = 4;
   if (tierShift > 0 && Math.random() < tierShift && idx < CHEST_TIERS.length - 1) {
     idx += 1;
+  }
+  if (guaranteeMinIdx > 0 && idx < guaranteeMinIdx) {
+    idx = guaranteeMinIdx;
   }
   const t = CHEST_TIERS[idx];
   return { tier: t.tier, xp: t.xp, date: todayISO() };
@@ -259,9 +265,15 @@ export const useStore = create<State>()(
             const next = STATUS_CYCLE[t.status];
             if (t.status !== "done" && next === "done") {
               const base = t.xp ?? 25;
-              const focusBonus =
-                (t.time_spent_sec ?? 0) >= 25 * 60 ? mods.focusBonus : 0;
-              xpDelta += Math.round(base * mods.taskXPMult * (1 + focusBonus));
+              const sec = t.time_spent_sec ?? 0;
+              const focusBonus = sec >= 25 * 60 ? mods.focusBonus : 0;
+              const deepBonus = sec >= 60 * 60 ? mods.deepFocusBonus : 0;
+              xpDelta += Math.round(
+                base *
+                  mods.taskXPMult *
+                  mods.allXPMult *
+                  (1 + focusBonus + deepBonus)
+              );
               rolledLoot = true;
             }
             if (t.status === "done" && next !== "done") xpDelta -= t.xp ?? 25;
@@ -330,9 +342,15 @@ export const useStore = create<State>()(
             if (t.id !== id) return t;
             if (t.status !== "done") {
               const base = t.xp ?? 25;
-              const focusBonus =
-                (t.time_spent_sec ?? 0) >= 25 * 60 ? mods.focusBonus : 0;
-              xpDelta += Math.round(base * mods.taskXPMult * (1 + focusBonus));
+              const sec = t.time_spent_sec ?? 0;
+              const focusBonus = sec >= 25 * 60 ? mods.focusBonus : 0;
+              const deepBonus = sec >= 60 * 60 ? mods.deepFocusBonus : 0;
+              xpDelta += Math.round(
+                base *
+                  mods.taskXPMult *
+                  mods.allXPMult *
+                  (1 + focusBonus + deepBonus)
+              );
               rolledLoot = true;
             }
             return {
@@ -428,7 +446,9 @@ export const useStore = create<State>()(
           const streak = habitStreak(s.habitLogs, habit_id, new Date(d));
           const mult = streakMultiplier(streak, mods.streakMultBoost);
           const base = habit?.xp_per_completion ?? 0;
-          const earned = Math.round(base * mult * mods.habitXPMult);
+          const earned = Math.round(
+            base * mult * mods.habitXPMult * mods.allXPMult
+          );
           const newLog: HabitLog = {
             id: uuid(),
             habit_id,
@@ -593,8 +613,13 @@ export const useStore = create<State>()(
         const today = todayISO();
         if (s.lastChestOpened === today) return null;
         const mods = computeModifiers(s.talents);
-        const reward = rollChest(mods.chestTierShift);
-        // Double-dip: chance to roll again and merge XP
+        const nextChestOrdinal = s.totalChestsOpened + 1;
+        const guaranteed =
+          mods.chestGuaranteePeriod > 0 &&
+          nextChestOrdinal % mods.chestGuaranteePeriod === 0
+            ? 2 // index of "rare"
+            : 0;
+        const reward = rollChest(mods.chestTierShift, guaranteed);
         let bonus: ChestReward | null = null;
         if (mods.chestDoubleChance > 0 && Math.random() < mods.chestDoubleChance) {
           bonus = rollChest(mods.chestTierShift);
@@ -642,7 +667,11 @@ export const useStore = create<State>()(
             q.id === questId ? { ...q, completed: true } : q
           );
           const allDone = updated.every((q) => q.completed);
-          const bonus = allDone && !snap.rewarded ? 50 : 0;
+          const mods = computeModifiers(s.talents);
+          const bonus =
+            allDone && !snap.rewarded
+              ? Math.round(50 * mods.questCompletionMult)
+              : 0;
           return {
             dailyQuests: s.dailyQuests.map((d) =>
               d.date === today
@@ -657,9 +686,10 @@ export const useStore = create<State>()(
 
       spendTalent: (id) => {
         const s = get();
-        if (s.talentPoints <= 0) return false;
         const def = getTalent(id);
         if (!def) return false;
+        const cost = costFor(def.tier);
+        if (s.talentPoints < cost) return false;
         const existing = s.talents.find((t) => t.id === id);
         const rank = existing?.rank ?? 0;
         if (rank >= def.maxRank) return false;
@@ -670,15 +700,18 @@ export const useStore = create<State>()(
           : [...s.talents, { id, rank: 1 }];
         set({
           talents: nextTalents,
-          talentPoints: s.talentPoints - 1,
+          talentPoints: s.talentPoints - cost,
         });
         return true;
       },
 
       refundTalent: (id) => {
         const s = get();
+        const def = getTalent(id);
+        if (!def) return false;
         const existing = s.talents.find((t) => t.id === id);
         if (!existing || existing.rank <= 0) return false;
+        const refund = costFor(def.tier);
         const nextTalents = s.talents
           .map((t) =>
             t.id === id ? { ...t, rank: t.rank - 1 } : t
@@ -686,7 +719,7 @@ export const useStore = create<State>()(
           .filter((t) => t.rank > 0);
         set({
           talents: nextTalents,
-          talentPoints: s.talentPoints + 1,
+          talentPoints: s.talentPoints + refund,
         });
         return true;
       },

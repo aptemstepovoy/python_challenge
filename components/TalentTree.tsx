@@ -4,7 +4,7 @@ import { useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Sparkles, X, Undo2 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { BRANCH_META, TALENTS, type TalentBranch } from "@/lib/talents";
+import { BRANCH_META, TALENTS, costFor, type TalentBranch } from "@/lib/talents";
 import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
 import type { TalentId } from "@/lib/types";
@@ -95,6 +95,7 @@ export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
                       const rank = rankOf(t.id);
                       const maxed = rank >= t.maxRank;
                       const sel = selected === t.id;
+                      const cost = costFor(t.tier);
                       return (
                         <button
                           key={t.id}
@@ -112,7 +113,7 @@ export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
                           <div className="flex items-center justify-between gap-2">
                             <span
                               className={cn(
-                                "text-sm",
+                                "text-sm truncate",
                                 rank > 0
                                   ? "text-foreground"
                                   : "text-foreground/70"
@@ -120,17 +121,25 @@ export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
                             >
                               {t.name}
                             </span>
-                            <span
-                              className={cn(
-                                "font-mono text-[10px] num shrink-0",
-                                maxed
-                                  ? "text-ok-bright"
-                                  : rank > 0
-                                  ? "text-accent-bright"
-                                  : "text-secondary"
-                              )}
-                            >
-                              {rank}/{t.maxRank}
+                            <span className="flex items-center gap-1.5 shrink-0 font-mono text-[10px]">
+                              <span
+                                className="num text-secondary"
+                                title={`Стоимость: ${cost} оч/ранг`}
+                              >
+                                {cost}◆
+                              </span>
+                              <span
+                                className={cn(
+                                  "num",
+                                  maxed
+                                    ? "text-ok-bright"
+                                    : rank > 0
+                                    ? "text-accent-bright"
+                                    : "text-secondary"
+                                )}
+                              >
+                                {rank}/{t.maxRank}
+                              </span>
                             </span>
                           </div>
                         </button>
@@ -150,7 +159,7 @@ export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-wider text-secondary">
                   {BRANCH_META[selectedDef.branch].label} · tier{" "}
-                  {selectedDef.tier}
+                  {selectedDef.tier} · {costFor(selectedDef.tier)} оч/ранг
                 </div>
               </div>
               <div className="text-sm text-foreground/85 leading-relaxed">
@@ -164,19 +173,19 @@ export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
                     if (spend(selectedDef.id)) haptic("success");
                   }}
                   disabled={
-                    points <= 0 ||
+                    points < costFor(selectedDef.tier) ||
                     rankOf(selectedDef.id) >= selectedDef.maxRank
                   }
                   className={cn(
                     "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-mono uppercase tracking-wider transition-colors",
-                    points > 0 &&
+                    points >= costFor(selectedDef.tier) &&
                       rankOf(selectedDef.id) < selectedDef.maxRank
                       ? "border-accent bg-accent/20 text-accent-bright hover:bg-accent/30"
                       : "border-border bg-surface text-muted cursor-not-allowed"
                   )}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  Вложить
+                  Вложить ({costFor(selectedDef.tier)}◆)
                 </button>
                 <button
                   onClick={() => {
