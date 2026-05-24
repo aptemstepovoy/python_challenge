@@ -54,8 +54,7 @@ function LoginInner() {
         });
         if (error) throw error;
         setMsg({ kind: "ok", text: "Вход выполнен — переход…" });
-        router.push(next);
-        router.refresh();
+        window.location.href = next;
       } else {
         const { data, error } = await sb.auth.signUp({
           email: email.trim(),
@@ -64,16 +63,18 @@ function LoginInner() {
         if (error) throw error;
         if (data.user && !data.session) {
           setMsg({
-            kind: "ok",
+            kind: "err",
             text:
-              "Подтверди email по ссылке из письма, потом войди. " +
-              "Если хочешь без подтверждений — в Supabase: Authentication → " +
-              "Providers → Email → отключи Confirm email.",
+              "В Supabase включено подтверждение email. Чтобы войти сразу — " +
+              "Authentication → Providers → Email → Confirm email = OFF, " +
+              "потом удали этого пользователя в Authentication → Users и " +
+              "зарегайся заново. ИЛИ — Project Settings → Authentication → " +
+              "URL Configuration → Site URL поставь твой Vercel URL и " +
+              "подтверди по ссылке из письма.",
           });
         } else {
           setMsg({ kind: "ok", text: "Аккаунт создан — переход…" });
-          router.push(next);
-          router.refresh();
+          window.location.href = next;
         }
       }
     } catch (err: unknown) {
