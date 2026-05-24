@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { habitStreak, perfectDaysStreak } from "./habits-logic";
 import type { BossState } from "./bosses-logic";
+import { levelFromXP } from "./xp";
 
 export type AchievementCategory =
   | "старт"
@@ -60,33 +61,57 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // Уровни
   {
     id: "level_2",
-    name: "Оператор",
-    description: "Достичь уровня 2 (500 XP)",
-    reward_xp: 100,
-    real_reward: "Заказать ужин в любимом месте",
+    name: "Ученик",
+    description: "Достичь уровня 2",
+    reward_xp: 25,
+    real_reward: "Любимый напиток после работы",
     category: "уровни",
   },
   {
     id: "level_3",
-    name: "Архитектор",
-    description: "Достичь уровня 3 (1500 XP)",
-    reward_xp: 200,
-    real_reward: "Купить книгу или мини-курс, который давно хотел",
+    name: "Послушник",
+    description: "Достичь уровня 3",
+    reward_xp: 50,
+    real_reward: "Заказать ужин в любимом месте",
     category: "уровни",
   },
   {
     id: "level_4",
-    name: "Стратег",
-    description: "Достичь уровня 4 (3500 XP)",
-    reward_xp: 400,
-    real_reward: "Выходной weekend с поездкой за город",
+    name: "Соискатель",
+    description: "Достичь уровня 4",
+    reward_xp: 100,
+    real_reward: "Купить книгу или мини-курс",
     category: "уровни",
   },
   {
     id: "level_5",
-    name: "Свободный",
-    description: "Достичь уровня 5 (7000 XP)",
+    name: "Оператор",
+    description: "Достичь уровня 5",
+    reward_xp: 200,
+    real_reward: "Выходной weekend с поездкой за город",
+    category: "уровни",
+  },
+  {
+    id: "level_10",
+    name: "Тактик",
+    description: "Достичь уровня 10",
+    reward_xp: 500,
+    real_reward: "Качественная вещь, о которой давно думаешь",
+    category: "уровни",
+  },
+  {
+    id: "level_15",
+    name: "Лидер",
+    description: "Достичь уровня 15",
     reward_xp: 1000,
+    real_reward: "Короткая поездка / уикенд в другой город",
+    category: "уровни",
+  },
+  {
+    id: "level_20",
+    name: "Свободный",
+    description: "Достичь уровня 20 — финальный титул",
+    reward_xp: 2000,
     real_reward: "Большая мечта — то, на что копил весь год",
     category: "уровни",
   },
@@ -347,6 +372,64 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: "боссы",
   },
 
+  // Сундуки и квесты
+  {
+    id: "chest_streak_7",
+    name: "Неделя удачи",
+    description: "Открывать дневной сундук 7 дней подряд",
+    reward_xp: 200,
+    real_reward: "Бутылка хорошего вина / десерт",
+    category: "стрики",
+  },
+  {
+    id: "chest_streak_30",
+    name: "Месяц удачи",
+    description: "Открывать дневной сундук 30 дней подряд",
+    reward_xp: 700,
+    real_reward: "То, что давно хотел купить «просто так»",
+    category: "стрики",
+  },
+  {
+    id: "golden_ticket",
+    name: "Золотой билет",
+    description: "Выпасть легендарной награды из сундука",
+    reward_xp: 500,
+    real_reward: "Лотерейный билет в реальной жизни",
+    category: "старт",
+  },
+  {
+    id: "daily_goal_7",
+    name: "Семь дней цели",
+    description: "7 дней подряд закрывать дневную XP-цель",
+    reward_xp: 150,
+    real_reward: "Хороший подкаст и тихий вечер",
+    category: "стрики",
+  },
+  {
+    id: "daily_goal_30",
+    name: "Месяц цели",
+    description: "30 дней подряд закрывать дневную XP-цель",
+    reward_xp: 600,
+    real_reward: "Спа-день / массаж",
+    category: "стрики",
+  },
+  {
+    id: "quest_master",
+    name: "Мастер квестов",
+    description: "Выполнить все 3 дневных квеста",
+    reward_xp: 50,
+    real_reward: "Любимая еда без вины",
+    category: "задачи",
+  },
+  {
+    id: "frozen_saved",
+    name: "Заморозка спасла",
+    description: "Сохранить streak с помощью freeze-токена",
+    reward_xp: 100,
+    real_reward: "Час чистого ничегонеделания",
+    category: "стрики",
+  },
+
   // Ревью
   {
     id: "reviews_4",
@@ -374,6 +457,12 @@ export type CheckInput = {
   reviews: WeeklyReview[];
   kgis: KGI[];
   bossStates: BossState[];
+  chestStreak?: number;
+  chestHistory?: Array<{ tier: string; xp: number; date: string }>;
+  dailyXPHistory?: Array<{ date: string; xp: number; goalHit?: boolean }>;
+  dailyGoal?: number;
+  dailyQuests?: Array<{ date: string; rewarded: boolean }>;
+  streakFreezesEarned?: number;
 };
 
 export function checkAchievements(input: CheckInput): AchievementId[] {
@@ -390,10 +479,14 @@ export function checkAchievements(input: CheckInput): AchievementId[] {
   if (input.reviews.length >= 4) unlocked.push("reviews_4");
   if (input.reviews.length >= 12) unlocked.push("reviews_12");
 
-  if (input.xp >= 500) unlocked.push("level_2");
-  if (input.xp >= 1500) unlocked.push("level_3");
-  if (input.xp >= 3500) unlocked.push("level_4");
-  if (input.xp >= 7000) unlocked.push("level_5");
+  const lvlNum = levelFromXP(input.xp).num;
+  if (lvlNum >= 2) unlocked.push("level_2");
+  if (lvlNum >= 3) unlocked.push("level_3");
+  if (lvlNum >= 4) unlocked.push("level_4");
+  if (lvlNum >= 5) unlocked.push("level_5");
+  if (lvlNum >= 10) unlocked.push("level_10");
+  if (lvlNum >= 15) unlocked.push("level_15");
+  if (lvlNum >= 20) unlocked.push("level_20");
 
   const perfectStreak = perfectDaysStreak(input.habits, input.habitLogs);
   if (perfectStreak >= 1) unlocked.push("perfect_day");
@@ -478,6 +571,46 @@ export function checkAchievements(input: CheckInput): AchievementId[] {
     const id = `boss_${bs.boss.id}` as AchievementId;
     unlocked.push(id);
     if (bs.boss.id === "naym") unlocked.push("outreach_master");
+  }
+
+  // Сундуки и квесты
+  if ((input.chestStreak ?? 0) >= 7) unlocked.push("chest_streak_7");
+  if ((input.chestStreak ?? 0) >= 30) unlocked.push("chest_streak_30");
+  if (input.chestHistory?.some((c) => c.tier === "legendary")) {
+    unlocked.push("golden_ticket");
+  }
+  if (input.dailyQuests?.some((q) => q.rewarded)) {
+    unlocked.push("quest_master");
+  }
+  if ((input.streakFreezesEarned ?? 0) >= 1) unlocked.push("frozen_saved");
+
+  if (input.dailyXPHistory && input.dailyGoal) {
+    const goal = input.dailyGoal;
+    const sorted = [...input.dailyXPHistory].sort((a, b) =>
+      b.date.localeCompare(a.date)
+    );
+    let streak = 0;
+    let cursor: Date | null = null;
+    for (const entry of sorted) {
+      if (entry.xp < goal) break;
+      const d = new Date(entry.date);
+      if (!cursor) {
+        cursor = d;
+        streak = 1;
+        continue;
+      }
+      const diff = Math.round(
+        (cursor.getTime() - d.getTime()) / 86400000
+      );
+      if (diff === 1) {
+        streak += 1;
+        cursor = d;
+      } else {
+        break;
+      }
+    }
+    if (streak >= 7) unlocked.push("daily_goal_7");
+    if (streak >= 30) unlocked.push("daily_goal_30");
   }
 
   return Array.from(new Set(unlocked));

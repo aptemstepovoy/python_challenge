@@ -140,6 +140,7 @@ export type HabitLog = {
   date: string;
   completed_at: string;
   note?: string;
+  frozen?: boolean;
 };
 
 export type Boss = {

@@ -25,11 +25,43 @@ const PALETTES: Record<
   number,
   { a: string; b: string; trim: string; glow: string }
 > = {
+  // Tier I — violet earth (L1-3)
   1: { a: "#3a2e55", b: "#1c1832", trim: "#a78bfa", glow: "#a78bfa" },
-  2: { a: "#5b3a8a", b: "#2a1a4a", trim: "#c4b5fd", glow: "#a78bfa" },
-  3: { a: "#7c2d8a", b: "#3a1a4a", trim: "#f472b6", glow: "#ec4899" },
-  4: { a: "#1e6f8a", b: "#1a3a4a", trim: "#67e8f9", glow: "#22d3ee" },
-  5: { a: "#8a5a1e", b: "#4a2e1a", trim: "#fcd34d", glow: "#fbbf24" },
+  2: { a: "#4a3568", b: "#251a3d", trim: "#b8a3f0", glow: "#a78bfa" },
+  3: { a: "#5b3a8a", b: "#2a1a4a", trim: "#c4b5fd", glow: "#a78bfa" },
+  // Tier II — magenta (L4-6)
+  4: { a: "#6a2a78", b: "#321845", trim: "#e879c5", glow: "#ec4899" },
+  5: { a: "#7c2d8a", b: "#3a1a4a", trim: "#f472b6", glow: "#ec4899" },
+  6: { a: "#8e2f9a", b: "#451d52", trim: "#f9a8d4", glow: "#ec4899" },
+  // Tier III — cyan/azure (L7-10)
+  7: { a: "#1e5e7a", b: "#13354a", trim: "#67e8f9", glow: "#22d3ee" },
+  8: { a: "#1e6f8a", b: "#1a3a4a", trim: "#67e8f9", glow: "#22d3ee" },
+  9: { a: "#1e7f9a", b: "#1c4055", trim: "#7cefff", glow: "#22d3ee" },
+  10: { a: "#2090b0", b: "#1f4660", trim: "#a5f3fc", glow: "#22d3ee" },
+  // Tier IV — gold (L11-15)
+  11: { a: "#705015", b: "#3a2810", trim: "#fcd34d", glow: "#fbbf24" },
+  12: { a: "#7a5618", b: "#42301a", trim: "#fde68a", glow: "#fbbf24" },
+  13: { a: "#8a5a1e", b: "#4a2e1a", trim: "#fcd34d", glow: "#fbbf24" },
+  14: { a: "#9a6322", b: "#523322", trim: "#fef08a", glow: "#fbbf24" },
+  15: { a: "#a86a25", b: "#583725", trim: "#fef9c3", glow: "#fcd34d" },
+  // Tier V — emerald (L16-20)
+  16: { a: "#1a5c3a", b: "#0d2e1d", trim: "#34d399", glow: "#10b981" },
+  17: { a: "#1d6a44", b: "#0f3324", trim: "#6ee7b7", glow: "#10b981" },
+  18: { a: "#21794d", b: "#11392a", trim: "#86efac", glow: "#10b981" },
+  19: { a: "#258657", b: "#134030", trim: "#a7f3d0", glow: "#34d399" },
+  20: { a: "#2a9560", b: "#154534", trim: "#bbf7d0", glow: "#34d399" },
+  // Tier VI — cosmic / iridescent (L21-25)
+  21: { a: "#4a1a78", b: "#220a3a", trim: "#c084fc", glow: "#a78bfa" },
+  22: { a: "#5a1c8a", b: "#280c44", trim: "#d8b4fe", glow: "#c4b5fd" },
+  23: { a: "#6a1e9c", b: "#2d0e4d", trim: "#e9d5ff", glow: "#c4b5fd" },
+  24: { a: "#7a20ae", b: "#321058", trim: "#f3e8ff", glow: "#e9d5ff" },
+  25: { a: "#8a22c0", b: "#371260", trim: "#faf5ff", glow: "#e9d5ff" },
+  // Tier VII — pure light (L26-30)
+  26: { a: "#9a9a9a", b: "#404060", trim: "#ffffff", glow: "#ffffff" },
+  27: { a: "#aaaab0", b: "#505068", trim: "#ffffff", glow: "#ffffff" },
+  28: { a: "#bababd", b: "#5a5a70", trim: "#ffffff", glow: "#ffffff" },
+  29: { a: "#cacacd", b: "#646478", trim: "#ffffff", glow: "#fcd34d" },
+  30: { a: "#dadadd", b: "#6e6e80", trim: "#fcd34d", glow: "#fcd34d" },
 };
 
 export function useAvatarState(): AvatarState {
@@ -67,11 +99,11 @@ export function useAvatarState(): AvatarState {
       trim: p.trim,
       glow: p.glow,
       level: lvl.num,
-      hasCrown: lvl.num >= 3,
+      hasCrown: lvl.num >= 8,
       hasGold: naymDefeated,
       hasPalmLeaf: baliDefeated,
       hasStaff: productDefeated,
-      hasWings: lvl.num >= 5,
+      hasWings: lvl.num >= 12,
     };
   }, [xp, kgis, tasks, habits, habitLogs]);
 }

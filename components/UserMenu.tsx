@@ -17,6 +17,7 @@ import {
   ListChecks,
   Repeat,
   Home,
+  Snowflake,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +54,9 @@ export function UserMenu({
   const xp = useStore((s) => s.xp);
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
+  const dailyGoal = useStore((s) => s.dailyXPGoal);
+  const setDailyGoal = useStore((s) => s.setDailyGoal);
+  const streakFreezes = useStore((s) => s.streakFreezes);
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -189,12 +193,43 @@ export function UserMenu({
 
             <div className="ornament" />
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-secondary px-2">
                 Настройки
               </div>
-              <div className="px-3 py-2 text-sm text-secondary">
-                Тема — тёмная (другие будут в v5)
+
+              <div className="space-y-2 px-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-foreground">Дневная XP-цель</span>
+                  <span className="num text-accent-bright">{dailyGoal} XP</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[15, 30, 60, 100].map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setDailyGoal(g)}
+                      className={cn(
+                        "rounded border px-2 py-1.5 text-xs font-mono transition-colors",
+                        dailyGoal === g
+                          ? "border-accent bg-accent/15 text-accent-bright"
+                          : "border-border bg-surface-2 text-foreground hover:border-accent-dim"
+                      )}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between px-2 text-sm">
+                <span className="flex items-center gap-1.5 text-foreground">
+                  <Snowflake className="h-3.5 w-3.5 text-cyan-bright" />
+                  Streak-заморозки
+                </span>
+                <span className="num">
+                  <span className="text-cyan-bright">{streakFreezes}</span>
+                  <span className="text-secondary"> / 3</span>
+                </span>
               </div>
             </div>
 

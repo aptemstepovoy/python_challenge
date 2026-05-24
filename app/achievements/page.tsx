@@ -34,6 +34,12 @@ export default function AchievementsPage() {
   const kgis = useStore((s) => s.kgis);
   const achievements = useStore((s) => s.achievements);
   const unlock = useStore((s) => s.unlockAchievement);
+  const chestStreak = useStore((s) => s.chestStreak);
+  const chestHistory = useStore((s) => s.chestHistory);
+  const dailyXPHistory = useStore((s) => s.dailyXPHistory);
+  const dailyGoal = useStore((s) => s.dailyXPGoal);
+  const dailyQuests = useStore((s) => s.dailyQuests);
+  const streakFreezesEarned = useStore((s) => s.streakFreezesEarned);
 
   const bossStates = useMemo(
     () =>
@@ -51,8 +57,28 @@ export default function AchievementsPage() {
         reviews,
         kgis,
         bossStates,
+        chestStreak,
+        chestHistory,
+        dailyXPHistory,
+        dailyGoal,
+        dailyQuests,
+        streakFreezesEarned,
       }),
-    [xp, tasks, habits, habitLogs, reviews, kgis, bossStates]
+    [
+      xp,
+      tasks,
+      habits,
+      habitLogs,
+      reviews,
+      kgis,
+      bossStates,
+      chestStreak,
+      chestHistory,
+      dailyXPHistory,
+      dailyGoal,
+      dailyQuests,
+      streakFreezesEarned,
+    ]
   );
 
   useEffect(() => {
