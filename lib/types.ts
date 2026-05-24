@@ -167,8 +167,6 @@ export type AchievementId =
   | "chest_streak_7"
   | "chest_streak_30"
   | "golden_ticket"
-  | "daily_goal_7"
-  | "daily_goal_30"
   | "quest_master"
   | "frozen_saved"
   | "perfect_day"

@@ -36,8 +36,6 @@ export default function AchievementsPage() {
   const unlock = useStore((s) => s.unlockAchievement);
   const chestStreak = useStore((s) => s.chestStreak);
   const chestHistory = useStore((s) => s.chestHistory);
-  const dailyXPHistory = useStore((s) => s.dailyXPHistory);
-  const dailyGoal = useStore((s) => s.dailyXPGoal);
   const dailyQuests = useStore((s) => s.dailyQuests);
   const streakFreezesEarned = useStore((s) => s.streakFreezesEarned);
 
@@ -59,8 +57,6 @@ export default function AchievementsPage() {
         bossStates,
         chestStreak,
         chestHistory,
-        dailyXPHistory,
-        dailyGoal,
         dailyQuests,
         streakFreezesEarned,
       }),
@@ -74,8 +70,6 @@ export default function AchievementsPage() {
       bossStates,
       chestStreak,
       chestHistory,
-      dailyXPHistory,
-      dailyGoal,
       dailyQuests,
       streakFreezesEarned,
     ]

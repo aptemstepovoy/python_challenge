@@ -91,7 +91,6 @@ type State = {
   startTimer: (task_id: string) => void;
   stopTimer: () => void;
 
-  setDailyGoal: (goal: number) => void;
   openDailyChest: () => ChestReward | null;
   completeQuest: (questId: string) => void;
   ensureQuestsForToday: () => void;
@@ -495,9 +494,6 @@ export const useStore = create<State>()(
           ),
         });
       },
-
-      setDailyGoal: (goal) =>
-        set({ dailyXPGoal: Math.max(5, Math.min(500, Math.round(goal))) }),
 
       openDailyChest: () => {
         const s = get();

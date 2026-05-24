@@ -398,22 +398,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: "старт",
   },
   {
-    id: "daily_goal_7",
-    name: "Семь дней цели",
-    description: "7 дней подряд закрывать дневную XP-цель",
-    reward_xp: 150,
-    real_reward: "Хороший подкаст и тихий вечер",
-    category: "стрики",
-  },
-  {
-    id: "daily_goal_30",
-    name: "Месяц цели",
-    description: "30 дней подряд закрывать дневную XP-цель",
-    reward_xp: 600,
-    real_reward: "Спа-день / массаж",
-    category: "стрики",
-  },
-  {
     id: "quest_master",
     name: "Мастер квестов",
     description: "Выполнить все 3 дневных квеста",
@@ -459,8 +443,6 @@ export type CheckInput = {
   bossStates: BossState[];
   chestStreak?: number;
   chestHistory?: Array<{ tier: string; xp: number; date: string }>;
-  dailyXPHistory?: Array<{ date: string; xp: number; goalHit?: boolean }>;
-  dailyGoal?: number;
   dailyQuests?: Array<{ date: string; rewarded: boolean }>;
   streakFreezesEarned?: number;
 };
@@ -583,35 +565,6 @@ export function checkAchievements(input: CheckInput): AchievementId[] {
     unlocked.push("quest_master");
   }
   if ((input.streakFreezesEarned ?? 0) >= 1) unlocked.push("frozen_saved");
-
-  if (input.dailyXPHistory && input.dailyGoal) {
-    const goal = input.dailyGoal;
-    const sorted = [...input.dailyXPHistory].sort((a, b) =>
-      b.date.localeCompare(a.date)
-    );
-    let streak = 0;
-    let cursor: Date | null = null;
-    for (const entry of sorted) {
-      if (entry.xp < goal) break;
-      const d = new Date(entry.date);
-      if (!cursor) {
-        cursor = d;
-        streak = 1;
-        continue;
-      }
-      const diff = Math.round(
-        (cursor.getTime() - d.getTime()) / 86400000
-      );
-      if (diff === 1) {
-        streak += 1;
-        cursor = d;
-      } else {
-        break;
-      }
-    }
-    if (streak >= 7) unlocked.push("daily_goal_7");
-    if (streak >= 30) unlocked.push("daily_goal_30");
-  }
 
   return Array.from(new Set(unlocked));
 }

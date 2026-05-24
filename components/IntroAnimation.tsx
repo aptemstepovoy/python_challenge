@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 
 const SESSION_KEY = "operator-intro-shown";
 const COOLDOWN_MIN = 30;
-const TOTAL_MS = 7200;
+const TOTAL_MS = 9000;
 
 type Phase =
   | "appear"
@@ -64,7 +64,7 @@ export function IntroAnimation() {
       ["box", 3400],
       ["lotus", 4400],
       ["text", 5500],
-      ["fade", 6800],
+      ["fade", 8600],
     ];
     const timers = schedule.map(([name, at]) =>
       setTimeout(() => setPhase(name), at)

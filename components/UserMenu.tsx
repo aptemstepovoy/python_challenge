@@ -18,6 +18,7 @@ import {
   Repeat,
   Home,
   Snowflake,
+  HelpCircle,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +29,50 @@ import { levelFromXP, progressWithinLevel } from "@/lib/xp";
 import { Progress } from "@/components/ui/progress";
 import { CountUp } from "@/components/CountUp";
 import { haptic } from "@/lib/haptics";
+
+function FreezeRow({ count }: { count: number }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="flex items-center gap-1.5 text-foreground">
+          <Snowflake className="h-3.5 w-3.5 text-cyan-bright" />
+          Streak-заморозки
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setShow((v) => !v);
+            }}
+            className="text-secondary hover:text-accent-bright"
+            aria-label="Что такое заморозки"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </span>
+        <span className="num">
+          <span className="text-cyan-bright">{count}</span>
+          <span className="text-secondary"> / 3</span>
+        </span>
+      </div>
+      {show && (
+        <div className="rounded-md border border-border bg-surface-2 p-3 text-xs leading-relaxed text-secondary space-y-1.5">
+          <div className="font-mono text-[10px] uppercase tracking-wider text-cyan-bright">
+            Заморозки спасают streak
+          </div>
+          <p>
+            Если пропустил день и не залогал ни одной daily-привычки — одна
+            заморозка сжигается автоматически, и streak продолжается.
+          </p>
+          <p>
+            <span className="text-foreground">Как зарабатывать:</span>{" "}
+            +1 заморозка за каждые 7 идеальных дней подряд. Максимум 3 в запасе.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const PRIMARY = [
   { href: "/today", label: "Сегодня", icon: Home },
@@ -54,8 +99,6 @@ export function UserMenu({
   const xp = useStore((s) => s.xp);
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
-  const dailyGoal = useStore((s) => s.dailyXPGoal);
-  const setDailyGoal = useStore((s) => s.setDailyGoal);
   const streakFreezes = useStore((s) => s.streakFreezes);
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -193,43 +236,13 @@ export function UserMenu({
 
             <div className="ornament" />
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-secondary px-2">
-                Настройки
+                Прогресс
               </div>
 
-              <div className="space-y-2 px-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground">Дневная XP-цель</span>
-                  <span className="num text-accent-bright">{dailyGoal} XP</span>
-                </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {[15, 30, 60, 100].map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => setDailyGoal(g)}
-                      className={cn(
-                        "rounded border px-2 py-1.5 text-xs font-mono transition-colors",
-                        dailyGoal === g
-                          ? "border-accent bg-accent/15 text-accent-bright"
-                          : "border-border bg-surface-2 text-foreground hover:border-accent-dim"
-                      )}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between px-2 text-sm">
-                <span className="flex items-center gap-1.5 text-foreground">
-                  <Snowflake className="h-3.5 w-3.5 text-cyan-bright" />
-                  Streak-заморозки
-                </span>
-                <span className="num">
-                  <span className="text-cyan-bright">{streakFreezes}</span>
-                  <span className="text-secondary"> / 3</span>
-                </span>
+              <div className="px-2">
+                <FreezeRow count={streakFreezes} />
               </div>
             </div>
 
