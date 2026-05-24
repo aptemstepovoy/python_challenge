@@ -61,13 +61,19 @@ export default function TodayPage() {
 
       <StreakDangerBanner />
 
+      {/* Hero — character + rings */}
+      <div className="h-[420px] md:h-[480px]">
+        <CharacterCard />
+      </div>
+
       <DailyChest />
 
-      <div className="grid grid-cols-2 grid-rows-2 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         <TodaySummary />
-        <CharacterCard />
-        <TodayCombined />
         <MainTaskCard compact />
+        <div className="col-span-2">
+          <TodayCombined />
+        </div>
       </div>
 
       <DailyQuests />
