@@ -62,14 +62,6 @@ export default function TodayPage() {
         <TodayCombined />
         <MainTaskCard compact />
       </div>
-
-      <nav className="flex flex-wrap gap-4 border-t border-border pt-4 font-mono text-[11px] uppercase tracking-wider text-muted">
-        <a href="/dashboard" className="hover:text-accent-bright">→ Обзор</a>
-        <a href="/achievements" className="hover:text-accent-bright">→ Достижения</a>
-        <a href="/bosses" className="hover:text-accent-bright">→ Боссы</a>
-        <a href="/journal" className="hover:text-accent-bright">→ Отчёт за день</a>
-        <a href="/review" className="hover:text-accent-bright">→ Ревью</a>
-      </nav>
     </div>
   );
 }
