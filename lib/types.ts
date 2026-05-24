@@ -78,6 +78,43 @@ export type Insight = {
   created_at: string;
 };
 
+export type DailyXPEntry = {
+  date: string;
+  xp: number;
+  goalHit?: boolean;
+};
+
+export type ChestReward = {
+  xp: number;
+  tier: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  date: string;
+};
+
+export type QuestId =
+  | "close_task_1"
+  | "close_task_3"
+  | "habits_3"
+  | "perfect_day"
+  | "insight_1"
+  | "journal_1"
+  | "log_weight"
+  | "open_chest"
+  | "focus_25"
+  | "boss_damage_50";
+
+export type Quest = {
+  id: QuestId;
+  name: string;
+  goal: number;
+  completed: boolean;
+};
+
+export type DailyQuestsSnapshot = {
+  date: string;
+  quests: Quest[];
+  rewarded: boolean;
+};
+
 export type HabitFrequency = "daily" | "weekly_n" | "custom_days";
 
 export type Habit = {
@@ -123,6 +160,16 @@ export type AchievementId =
   | "level_3"
   | "level_4"
   | "level_5"
+  | "level_10"
+  | "level_15"
+  | "level_20"
+  | "chest_streak_7"
+  | "chest_streak_30"
+  | "golden_ticket"
+  | "daily_goal_7"
+  | "daily_goal_30"
+  | "quest_master"
+  | "frozen_saved"
   | "perfect_day"
   | "perfect_week"
   | "perfect_month"

@@ -8,6 +8,7 @@ import { DailyIntro } from "@/components/DailyIntro";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FocusTimer } from "@/components/FocusTimer";
 import { IntroAnimation } from "@/components/IntroAnimation";
+import { LevelUpToast } from "@/components/LevelUpToast";
 
 function isAuthRoute(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -38,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <QuickCapture />
       <DailyIntro />
       <AchievementToast />
+      <LevelUpToast />
       <FocusTimer />
       <IntroAnimation />
     </>

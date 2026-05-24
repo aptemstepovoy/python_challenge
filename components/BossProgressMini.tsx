@@ -38,11 +38,12 @@ export function BossProgressMini() {
       </div>
       <div className="mb-2 flex items-baseline justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
         <span>
-          HP{" "}
-          <span className="num text-foreground">
-            {target.hpRemaining}
+          <span className="num text-accent-bright">
+            {Math.round(100 - target.hpPercent)}%
           </span>{" "}
-          / {target.boss.total_hp}
+          побеждён · урон{" "}
+          <span className="num text-foreground">{target.damage}</span> /{" "}
+          {target.boss.total_hp}
         </span>
         <span>
           {daysLeft >= 0 ? `${daysLeft} дн.` : `+${-daysLeft} дн. сверху`}

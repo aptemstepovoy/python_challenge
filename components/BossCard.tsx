@@ -33,13 +33,15 @@ export function BossCard({ state }: { state: BossState }) {
 
       <div className="mb-2 flex items-baseline justify-between font-mono text-[10px] uppercase tracking-wider text-muted">
         <span>
-          HP{" "}
-          <span className="num text-foreground">{hpRemaining}</span> /{" "}
-          {boss.total_hp}
+          <span className="num text-accent-bright">
+            {Math.round(100 - hpPercent)}%
+          </span>{" "}
+          побеждён
         </span>
         <span>
           урон{" "}
-          <span className="num text-accent">{totalDamage}</span>
+          <span className="num text-foreground">{totalDamage}</span> /{" "}
+          {boss.total_hp}
         </span>
       </div>
 

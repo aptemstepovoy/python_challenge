@@ -73,17 +73,19 @@ export function CharacterCard() {
       <div className="relative space-y-1.5">
         <div className="flex items-baseline justify-between">
           <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-muted">
-            HP {bossInfo ? `· ${bossInfo.boss.name}` : ""}
+            Босс {bossInfo ? `· ${bossInfo.boss.name}` : ""}
           </div>
           <div className="num text-[11px] text-foreground/90">
-            {bossInfo ? `${bossInfo.hpRemaining}/${bossInfo.boss.total_hp}` : "—"}
+            {bossInfo
+              ? `${Math.round(100 - bossInfo.hpPercent)}%`
+              : "—"}
           </div>
         </div>
         <GameBar
-          current={bossInfo ? bossInfo.hpRemaining : 0}
+          current={bossInfo ? bossInfo.damage : 0}
           max={bossInfo ? bossInfo.boss.total_hp : 1}
-          fill="linear-gradient(180deg, #fca5a5 0%, #f87171 50%, #b91c1c 100%)"
-          glow="rgba(248,113,113,0.5)"
+          fill="linear-gradient(90deg, #a78bfa 0%, #ec4899 60%, #22d3ee 100%)"
+          glow="rgba(167,139,250,0.55)"
         />
 
         <div className="flex items-baseline justify-between pt-1">

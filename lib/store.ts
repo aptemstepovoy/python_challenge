@@ -5,7 +5,10 @@ import { persist } from "zustand/middleware";
 import type {
   AchievementId,
   AchievementSnapshot,
+  ChestReward,
   DailyJournal,
+  DailyQuestsSnapshot,
+  DailyXPEntry,
   Habit,
   HabitLog,
   Insight,
@@ -23,6 +26,9 @@ import {
   initialTasks,
 } from "./initial-data";
 import { uuid } from "./utils";
+import { habitStreak } from "./habits-logic";
+import { addDailyXP } from "./daily-xp";
+import { generateQuestsForDate } from "./quests";
 
 type State = {
   kgis: KGI[];
@@ -41,6 +47,16 @@ type State = {
   insights: Insight[];
   activeTimerTaskId: string | null;
   activeTimerStartedAt: string | null;
+  // v5 dopamine
+  dailyXPGoal: number;
+  dailyXPHistory: DailyXPEntry[];
+  lastChestOpened: string | null;
+  chestStreak: number;
+  totalChestsOpened: number;
+  chestHistory: ChestReward[];
+  dailyQuests: DailyQuestsSnapshot[];
+  streakFreezes: number;
+  streakFreezesEarned: number;
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -74,6 +90,12 @@ type State = {
   deleteInsight: (id: string) => void;
   startTimer: (task_id: string) => void;
   stopTimer: () => void;
+
+  setDailyGoal: (goal: number) => void;
+  openDailyChest: () => ChestReward | null;
+  completeQuest: (questId: string) => void;
+  ensureQuestsForToday: () => void;
+
   resetData: () => void;
 };
 
@@ -86,6 +108,26 @@ const STATUS_CYCLE: Record<Status, Status> = {
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const nowISO = () => new Date().toISOString();
+
+function streakMultiplier(streak: number): number {
+  if (streak >= 30) return 1.5;
+  if (streak >= 7) return 1.25;
+  if (streak >= 3) return 1.1;
+  return 1.0;
+}
+
+function rollChest(): ChestReward {
+  const r = Math.random();
+  if (r < 0.6)
+    return { xp: 15, tier: "common", date: todayISO() };
+  if (r < 0.85)
+    return { xp: 40, tier: "uncommon", date: todayISO() };
+  if (r < 0.95)
+    return { xp: 100, tier: "rare", date: todayISO() };
+  if (r < 0.99)
+    return { xp: 300, tier: "epic", date: todayISO() };
+  return { xp: 1000, tier: "legendary", date: todayISO() };
+}
 
 export const useStore = create<State>()(
   persist(
@@ -106,6 +148,16 @@ export const useStore = create<State>()(
       insights: [],
       activeTimerTaskId: null,
       activeTimerStartedAt: null,
+
+      dailyXPGoal: 30,
+      dailyXPHistory: [],
+      lastChestOpened: null,
+      chestStreak: 0,
+      totalChestsOpened: 0,
+      chestHistory: [],
+      dailyQuests: [],
+      streakFreezes: 0,
+      streakFreezesEarned: 0,
 
       setKGI: (id, current_value) =>
         set((s) => ({
@@ -149,7 +201,14 @@ export const useStore = create<State>()(
                   : t.started_at,
             };
           });
-          return { tasks, xp: Math.max(0, s.xp + xpDelta) };
+          return {
+            tasks,
+            xp: Math.max(0, s.xp + xpDelta),
+            dailyXPHistory:
+              xpDelta > 0
+                ? addDailyXP(s.dailyXPHistory, xpDelta)
+                : s.dailyXPHistory,
+          };
         }),
 
       updateTask: (id, patch) =>
@@ -197,7 +256,14 @@ export const useStore = create<State>()(
               snoozed_until: undefined,
             };
           });
-          return { tasks, xp: s.xp + xpDelta };
+          return {
+            tasks,
+            xp: s.xp + xpDelta,
+            dailyXPHistory:
+              xpDelta > 0
+                ? addDailyXP(s.dailyXPHistory, xpDelta)
+                : s.dailyXPHistory,
+          };
         }),
 
       deleteTask: (id) =>
@@ -237,11 +303,13 @@ export const useStore = create<State>()(
                 : k
             );
           }
+          const gain = 100;
           return {
             reviews: [newReview, ...s.reviews],
             weightEntries: next,
             kgis,
-            xp: s.xp + 100,
+            xp: s.xp + gain,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, gain),
           };
         }),
 
@@ -266,6 +334,11 @@ export const useStore = create<State>()(
               xp: Math.max(0, s.xp - (habit?.xp_per_completion ?? 0)),
             };
           }
+          // streak BEFORE adding new log
+          const streak = habitStreak(s.habitLogs, habit_id, new Date(d));
+          const mult = streakMultiplier(streak);
+          const base = habit?.xp_per_completion ?? 0;
+          const earned = Math.round(base * mult);
           const newLog: HabitLog = {
             id: uuid(),
             habit_id,
@@ -274,7 +347,8 @@ export const useStore = create<State>()(
           };
           return {
             habitLogs: [...s.habitLogs, newLog],
-            xp: s.xp + (habit?.xp_per_completion ?? 0),
+            xp: s.xp + earned,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, earned),
           };
         }),
 
@@ -326,30 +400,43 @@ export const useStore = create<State>()(
           habits: s.habits.map((h) => (h.id === id ? { ...h, ...patch } : h)),
         })),
 
-      addXP: (amount) => set((s) => ({ xp: Math.max(0, s.xp + amount) })),
+      addXP: (amount) =>
+        set((s) => ({
+          xp: Math.max(0, s.xp + amount),
+          dailyXPHistory:
+            amount > 0 ? addDailyXP(s.dailyXPHistory, amount) : s.dailyXPHistory,
+        })),
 
       unlockAchievement: (id) =>
         set((s) => {
           if (s.achievements.some((a) => a.id === id)) return {};
+          // find reward_xp from ACHIEVEMENTS at call site, but here we lock to 100 default
+          // Caller-driven: ACHIEVEMENTS list determines reward, but here a base bonus
+          const bonus = 100;
           return {
             achievements: [
               ...s.achievements,
               { id, unlocked_at: nowISO() },
             ],
-            xp: s.xp + 100,
+            xp: s.xp + bonus,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, bonus),
           };
         }),
 
       markIntroSeen: () => set({ lastIntroDate: todayISO() }),
 
       addJournal: (j) =>
-        set((s) => ({
-          journals: [
-            { ...j, id: uuid(), created_at: nowISO() },
-            ...s.journals,
-          ],
-          xp: s.xp + 30,
-        })),
+        set((s) => {
+          const gain = 30;
+          return {
+            journals: [
+              { ...j, id: uuid(), created_at: nowISO() },
+              ...s.journals,
+            ],
+            xp: s.xp + gain,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, gain),
+          };
+        }),
 
       updateJournal: (id, patch) =>
         set((s) => ({
@@ -364,13 +451,17 @@ export const useStore = create<State>()(
         })),
 
       addInsight: (ins) =>
-        set((s) => ({
-          insights: [
-            { ...ins, id: uuid(), created_at: nowISO() },
-            ...s.insights,
-          ],
-          xp: s.xp + 10,
-        })),
+        set((s) => {
+          const gain = 10;
+          return {
+            insights: [
+              { ...ins, id: uuid(), created_at: nowISO() },
+              ...s.insights,
+            ],
+            xp: s.xp + gain,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, gain),
+          };
+        }),
 
       deleteInsight: (id) =>
         set((s) => ({
@@ -405,6 +496,64 @@ export const useStore = create<State>()(
         });
       },
 
+      setDailyGoal: (goal) =>
+        set({ dailyXPGoal: Math.max(5, Math.min(500, Math.round(goal))) }),
+
+      openDailyChest: () => {
+        const s = get();
+        const today = todayISO();
+        if (s.lastChestOpened === today) return null;
+        const reward = rollChest();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yISO = yesterday.toISOString().slice(0, 10);
+        const newStreak = s.lastChestOpened === yISO ? s.chestStreak + 1 : 1;
+        set({
+          lastChestOpened: today,
+          chestStreak: newStreak,
+          totalChestsOpened: s.totalChestsOpened + 1,
+          chestHistory: [reward, ...s.chestHistory].slice(0, 30),
+          xp: s.xp + reward.xp,
+          dailyXPHistory: addDailyXP(s.dailyXPHistory, reward.xp),
+        });
+        return reward;
+      },
+
+      ensureQuestsForToday: () => {
+        const s = get();
+        const today = todayISO();
+        if (s.dailyQuests.find((q) => q.date === today)) return;
+        const quests = generateQuestsForDate(today);
+        set({
+          dailyQuests: [
+            { date: today, quests, rewarded: false },
+            ...s.dailyQuests,
+          ].slice(0, 30),
+        });
+      },
+
+      completeQuest: (questId) =>
+        set((s) => {
+          const today = todayISO();
+          const snap = s.dailyQuests.find((q) => q.date === today);
+          if (!snap) return {};
+          const updated = snap.quests.map((q) =>
+            q.id === questId ? { ...q, completed: true } : q
+          );
+          const allDone = updated.every((q) => q.completed);
+          const bonus = allDone && !snap.rewarded ? 50 : 0;
+          return {
+            dailyQuests: s.dailyQuests.map((d) =>
+              d.date === today
+                ? { ...d, quests: updated, rewarded: snap.rewarded || allDone }
+                : d
+            ),
+            xp: bonus > 0 ? s.xp + bonus : s.xp,
+            dailyXPHistory:
+              bonus > 0 ? addDailyXP(s.dailyXPHistory, bonus) : s.dailyXPHistory,
+          };
+        }),
+
       resetData: () =>
         set({
           kgis: initialKGIs,
@@ -423,11 +572,20 @@ export const useStore = create<State>()(
           insights: [],
           activeTimerTaskId: null,
           activeTimerStartedAt: null,
+          dailyXPGoal: 30,
+          dailyXPHistory: [],
+          lastChestOpened: null,
+          chestStreak: 0,
+          totalChestsOpened: 0,
+          chestHistory: [],
+          dailyQuests: [],
+          streakFreezes: 0,
+          streakFreezesEarned: 0,
         }),
     }),
     {
-      name: "operator-store-v6",
-      version: 6,
+      name: "operator-store-v7",
+      version: 7,
     }
   )
 );
