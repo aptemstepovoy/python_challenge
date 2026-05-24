@@ -8,6 +8,7 @@ import type {
   DailyJournal,
   Habit,
   HabitLog,
+  Insight,
   KGI,
   Status,
   Step,
@@ -37,6 +38,7 @@ type State = {
   snoozesUsedDate: string | null;
   snoozesUsedCount: number;
   journals: DailyJournal[];
+  insights: Insight[];
   activeTimerTaskId: string | null;
   activeTimerStartedAt: string | null;
 
@@ -68,6 +70,8 @@ type State = {
   addJournal: (journal: Omit<DailyJournal, "id" | "created_at">) => void;
   updateJournal: (id: string, patch: Partial<DailyJournal>) => void;
   deleteJournal: (id: string) => void;
+  addInsight: (insight: Omit<Insight, "id" | "created_at">) => void;
+  deleteInsight: (id: string) => void;
   startTimer: (task_id: string) => void;
   stopTimer: () => void;
   resetData: () => void;
@@ -99,6 +103,7 @@ export const useStore = create<State>()(
       snoozesUsedDate: null,
       snoozesUsedCount: 0,
       journals: [],
+      insights: [],
       activeTimerTaskId: null,
       activeTimerStartedAt: null,
 
@@ -358,6 +363,20 @@ export const useStore = create<State>()(
           journals: s.journals.filter((j) => j.id !== id),
         })),
 
+      addInsight: (ins) =>
+        set((s) => ({
+          insights: [
+            { ...ins, id: uuid(), created_at: nowISO() },
+            ...s.insights,
+          ],
+          xp: s.xp + 10,
+        })),
+
+      deleteInsight: (id) =>
+        set((s) => ({
+          insights: s.insights.filter((i) => i.id !== id),
+        })),
+
       startTimer: (task_id) =>
         set({
           activeTimerTaskId: task_id,
@@ -401,6 +420,7 @@ export const useStore = create<State>()(
           snoozesUsedDate: null,
           snoozesUsedCount: 0,
           journals: [],
+          insights: [],
           activeTimerTaskId: null,
           activeTimerStartedAt: null,
         }),

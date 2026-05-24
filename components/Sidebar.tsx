@@ -8,13 +8,17 @@ import { useStore } from "@/lib/store";
 import { levelFromXP, progressWithinLevel } from "@/lib/xp";
 import { CountUp } from "@/components/CountUp";
 import { Progress } from "@/components/ui/progress";
-import { AuthBlock } from "@/components/AuthBlock";
+import { UserMenu } from "@/components/UserMenu";
+import { User } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { SUPABASE_ENABLED } from "@/lib/supabase/env";
 
 const items = [
   { href: "/today", label: "Сегодня" },
   { href: "/dashboard", label: "Обзор" },
   { href: "/habits", label: "Привычки" },
   { href: "/tasks", label: "Задачи" },
+  { href: "/insights", label: "Инсайты" },
   { href: "/bosses", label: "Боссы" },
   { href: "/achievements", label: "Достижения" },
   { href: "/journal", label: "Отчёт за день" },
@@ -24,6 +28,7 @@ const items = [
 export function Sidebar() {
   const pathname = usePathname();
   const [now, setNow] = useState<Date | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const xp = useStore((s) => s.xp);
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
@@ -34,15 +39,32 @@ export function Sidebar() {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    if (!SUPABASE_ENABLED) return;
+    const sb = createClient();
+    if (!sb) return;
+    sb.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
+    const { data: sub } = sb.auth.onAuthStateChange((_e, session) => {
+      setEmail(session?.user?.email ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   return (
     <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between self-start border-r border-border bg-panel px-5 py-6 md:flex">
       <div>
-        <div className="display mb-1 text-lg text-accent-bright text-glow tracking-[0.18em]">
+        <Link
+          href="/today"
+          className="display mb-1 block text-lg text-accent-bright text-glow tracking-[0.18em] hover:text-pink-bright transition-colors"
+        >
           OPERATOR
-        </div>
-        <div className="mb-6 text-[11px] italic leading-snug text-muted">
+        </Link>
+        <Link
+          href="/today"
+          className="mb-6 block text-[11px] italic leading-snug text-muted hover:text-secondary transition-colors"
+        >
           К свободе через систему
-        </div>
+        </Link>
         <div className="ornament mb-6" />
 
         <nav className="flex flex-col gap-0.5">
@@ -90,9 +112,23 @@ export function Sidebar() {
         ) : (
           <div className="font-mono uppercase tracking-wider opacity-0">.</div>
         )}
-        <div className="border-t border-border pt-3">
-          <AuthBlock />
-        </div>
+        <UserMenu
+          trigger={
+            <button className="flex w-full items-center gap-2 rounded-md border border-border-bright bg-surface-2/40 px-3 py-2 hover:border-accent transition-colors text-left">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet to-pink text-white">
+                <User className="h-3.5 w-3.5" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-mono text-[10px] uppercase tracking-wider text-secondary truncate">
+                  {email ?? (SUPABASE_ENABLED ? "Гость" : "Локальный")}
+                </span>
+                <span className="block font-mono text-[9px] uppercase tracking-wider text-secondary/70 mt-0.5">
+                  меню →
+                </span>
+              </span>
+            </button>
+          }
+        />
       </div>
     </aside>
   );

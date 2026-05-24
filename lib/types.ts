@@ -70,6 +70,14 @@ export type DailyJournal = {
   created_at: string;
 };
 
+export type Insight = {
+  id: string;
+  date: string;
+  text: string;
+  source?: "voice" | "text";
+  created_at: string;
+};
+
 export type HabitFrequency = "daily" | "weekly_n";
 
 export type Habit = {

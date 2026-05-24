@@ -20,6 +20,7 @@ const PERSIST_KEYS = [
   "snoozesUsedDate",
   "snoozesUsedCount",
   "journals",
+  "insights",
   "activeTimerTaskId",
   "activeTimerStartedAt",
 ] as const;

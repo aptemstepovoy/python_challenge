@@ -10,7 +10,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Scale, Check, BookOpen, Zap } from "lucide-react";
+import { TaskFormDialog } from "@/components/TaskFormDialog";
+import { InsightDialog } from "@/components/InsightDialog";
+import {
+  Plus,
+  Scale,
+  Check,
+  BookOpen,
+  Zap,
+  ListPlus,
+  Lightbulb,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { haptic } from "@/lib/haptics";
 
@@ -36,7 +46,7 @@ function WeightForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-3">
-      <div className="font-mono text-xs uppercase tracking-wider text-muted">
+      <div className="font-mono text-xs uppercase tracking-wider text-secondary">
         Вес сегодня, кг
       </div>
       <Input
@@ -49,7 +59,7 @@ function WeightForm({ onDone }: { onDone: () => void }) {
         onChange={(e) => setValue(e.target.value)}
       />
       {last && (
-        <div className="font-mono text-[10px] uppercase tracking-wider text-muted">
+        <div className="font-mono text-[10px] uppercase tracking-wider text-secondary">
           Прошлый: <span className="num text-foreground/70">{last.weight_kg}</span> кг
         </div>
       )}
@@ -62,7 +72,6 @@ function WeightForm({ onDone }: { onDone: () => void }) {
 
 function TaskQuickList({ onDone }: { onDone: () => void }) {
   const tasks = useStore((s) => s.tasks);
-  const cycle = useStore((s) => s.cycleTaskStatus);
   const setStatus = useStore((s) => s.setTaskStatus);
 
   const open = tasks
@@ -84,7 +93,7 @@ function TaskQuickList({ onDone }: { onDone: () => void }) {
 
   if (open.length === 0) {
     return (
-      <div className="py-6 text-center text-sm text-muted">
+      <div className="py-6 text-center text-sm text-secondary">
         Открытых задач нет
       </div>
     );
@@ -92,7 +101,7 @@ function TaskQuickList({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
-      <div className="mb-2 font-mono text-xs uppercase tracking-wider text-muted">
+      <div className="mb-2 font-mono text-xs uppercase tracking-wider text-secondary">
         Отметить сделанной
       </div>
       {open.map((t) => (
@@ -101,8 +110,8 @@ function TaskQuickList({ onDone }: { onDone: () => void }) {
           onClick={() => mark(t.id)}
           className="flex w-full items-center gap-3 rounded border border-border bg-surface-2 px-3 py-2.5 text-left hover:border-accent transition-colors"
         >
-          <Check className="h-4 w-4 shrink-0 text-muted" />
-          <span className="num shrink-0 text-xs text-muted">{t.id}</span>
+          <Check className="h-4 w-4 shrink-0 text-secondary" />
+          <span className="num shrink-0 text-xs text-secondary">{t.id}</span>
           <span className="flex-1 truncate text-sm text-foreground">
             {t.title}
           </span>
@@ -115,22 +124,38 @@ function TaskQuickList({ onDone }: { onDone: () => void }) {
 function Menu({
   setMode,
   closeAndGo,
+  openTaskDialog,
+  openInsightDialog,
 }: {
   setMode: (m: Mode) => void;
   closeAndGo: (path: string) => void;
+  openTaskDialog: () => void;
+  openInsightDialog: () => void;
 }) {
   const items = [
+    {
+      icon: Lightbulb,
+      label: "Записать инсайт",
+      sub: "Текстом или голосом, +10 XP",
+      action: openInsightDialog,
+    },
+    {
+      icon: Check,
+      label: "Отметить задачу сделанной",
+      sub: "Выбери из списка открытых",
+      action: () => setMode("task"),
+    },
+    {
+      icon: ListPlus,
+      label: "Создать задачу",
+      sub: "Новая задача с дедлайном",
+      action: openTaskDialog,
+    },
     {
       icon: Scale,
       label: "Залогать вес",
       sub: "Запишет в график и обновит KGI",
       action: () => setMode("weight"),
-    },
-    {
-      icon: Check,
-      label: "Отметить задачу",
-      sub: "Выбери из списка открытых",
-      action: () => setMode("task"),
     },
     {
       icon: BookOpen,
@@ -148,10 +173,10 @@ function Menu({
           onClick={it.action}
           className="flex w-full items-center gap-4 rounded border border-border bg-surface-2 p-4 text-left hover:border-accent transition-colors"
         >
-          <it.icon className="h-5 w-5 shrink-0 text-accent" />
+          <it.icon className="h-5 w-5 shrink-0 text-accent-bright" />
           <div className="flex-1 min-w-0">
             <div className="text-sm text-foreground">{it.label}</div>
-            <div className="mt-0.5 text-[11px] text-muted">{it.sub}</div>
+            <div className="mt-0.5 text-[11px] text-secondary">{it.sub}</div>
           </div>
         </button>
       ))}
@@ -163,6 +188,8 @@ export function QuickCapture() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("menu");
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [insightOpen, setInsightOpen] = useState(false);
 
   const handleOpenChange = (o: boolean) => {
     setOpen(o);
@@ -176,12 +203,24 @@ export function QuickCapture() {
     router.push(path);
   };
 
+  const openTask = () => {
+    setOpen(false);
+    setMode("menu");
+    setTaskOpen(true);
+  };
+
+  const openInsight = () => {
+    setOpen(false);
+    setMode("menu");
+    setInsightOpen(true);
+  };
+
   return (
     <>
       <button
         aria-label="Quick capture"
         onClick={() => handleOpenChange(true)}
-        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-background shadow-lg shadow-black/40 active:scale-95 transition-transform md:bottom-8"
+        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet to-pink text-white shadow-glow-lg active:scale-95 transition-transform md:bottom-8"
       >
         <Plus className="h-6 w-6" strokeWidth={2.5} />
       </button>
@@ -190,7 +229,7 @@ export function QuickCapture() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-accent" />
+              <Zap className="h-4 w-4 text-accent-bright" />
               {mode === "menu"
                 ? "Быстрое действие"
                 : mode === "weight"
@@ -199,7 +238,12 @@ export function QuickCapture() {
             </DialogTitle>
           </DialogHeader>
           {mode === "menu" && (
-            <Menu setMode={setMode} closeAndGo={closeAndGo} />
+            <Menu
+              setMode={setMode}
+              closeAndGo={closeAndGo}
+              openTaskDialog={openTask}
+              openInsightDialog={openInsight}
+            />
           )}
           {mode === "weight" && (
             <WeightForm onDone={() => handleOpenChange(false)} />
@@ -210,13 +254,16 @@ export function QuickCapture() {
           {mode !== "menu" && (
             <button
               onClick={() => setMode("menu")}
-              className="text-xs font-mono uppercase tracking-wider text-muted hover:text-foreground"
+              className="text-xs font-mono uppercase tracking-wider text-secondary hover:text-accent-bright"
             >
               ← назад
             </button>
           )}
         </DialogContent>
       </Dialog>
+
+      <TaskFormDialog open={taskOpen} onOpenChange={setTaskOpen} />
+      <InsightDialog open={insightOpen} onOpenChange={setInsightOpen} />
     </>
   );
 }

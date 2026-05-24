@@ -53,8 +53,14 @@ function LoginInner() {
           password,
         });
         if (error) throw error;
+        // wait for session to be fully persisted in cookies
+        for (let i = 0; i < 20; i++) {
+          const { data } = await sb.auth.getSession();
+          if (data.session) break;
+          await new Promise((r) => setTimeout(r, 50));
+        }
         setMsg({ kind: "ok", text: "Вход выполнен — переход…" });
-        window.location.href = next;
+        window.location.replace(next);
       } else {
         const { data, error } = await sb.auth.signUp({
           email: email.trim(),
@@ -73,8 +79,18 @@ function LoginInner() {
               "подтверди по ссылке из письма.",
           });
         } else {
+          // double-tap: signUp set session, but force-sign-in to guarantee cookies
+          await sb.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+          for (let i = 0; i < 20; i++) {
+            const { data: s } = await sb.auth.getSession();
+            if (s.session) break;
+            await new Promise((r) => setTimeout(r, 50));
+          }
           setMsg({ kind: "ok", text: "Аккаунт создан — переход…" });
-          window.location.href = next;
+          window.location.replace(next);
         }
       }
     } catch (err: unknown) {

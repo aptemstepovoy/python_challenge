@@ -6,16 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Square, Target } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 
-function format(sec: number): string {
+function formatMinutes(sec: number): string {
   const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  if (m >= 60) {
-    const h = Math.floor(m / 60);
-    const mm = m % 60;
-    return `${h}:${pad(mm)}:${pad(s)}`;
-  }
-  return `${pad(m)}:${pad(s)}`;
+  if (m < 1) return "< 1 мин";
+  if (m < 60) return `${m} мин`;
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${h} ч ${mm} мин`;
 }
 
 export function FocusTimer() {
@@ -24,19 +21,20 @@ export function FocusTimer() {
   const tasks = useStore((s) => s.tasks);
   const stop = useStore((s) => s.stopTimer);
 
-  const [elapsed, setElapsed] = useState(0);
+  const [minutesLabel, setMinutesLabel] = useState("< 1 мин");
 
   useEffect(() => {
     if (!taskId || !startedAt) {
-      setElapsed(0);
+      setMinutesLabel("< 1 мин");
       return;
     }
     const start = new Date(startedAt).getTime();
     const tick = () => {
-      setElapsed(Math.max(0, Math.round((Date.now() - start) / 1000)));
+      const sec = Math.max(0, Math.round((Date.now() - start) / 1000));
+      setMinutesLabel(formatMinutes(sec));
     };
     tick();
-    const i = setInterval(tick, 1000);
+    const i = setInterval(tick, 30_000);
     return () => clearInterval(i);
   }, [taskId, startedAt]);
 
@@ -58,8 +56,8 @@ export function FocusTimer() {
             {task.id} · в работе
           </div>
           <div className="flex items-baseline gap-3">
-            <span className="num text-xl text-foreground tabular-nums">
-              {format(elapsed)}
+            <span className="num text-base text-foreground tabular-nums">
+              {minutesLabel}
             </span>
             <span className="text-sm text-foreground/80 truncate">
               {task.title}

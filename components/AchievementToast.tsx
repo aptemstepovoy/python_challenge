@@ -5,6 +5,7 @@ import { Trophy, X, Gift } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ACHIEVEMENTS } from "@/lib/achievements-logic";
 import { haptic } from "@/lib/haptics";
+import { playAchievementSound } from "@/lib/sound";
 import { cn } from "@/lib/utils";
 import type { AchievementId } from "@/lib/types";
 
@@ -13,27 +14,29 @@ type ToastItem = {
   achievementId: AchievementId;
 };
 
+const FRESH_WINDOW_SEC = 8;
+
 export function AchievementToast() {
   const achievements = useStore((s) => s.achievements);
   const seenRef = useRef<Set<string>>(new Set());
-  const initRef = useRef(false);
   const [queue, setQueue] = useState<ToastItem[]>([]);
 
   useEffect(() => {
-    if (!initRef.current) {
-      initRef.current = true;
-      for (const a of achievements) seenRef.current.add(a.id);
-      return;
-    }
     const fresh: ToastItem[] = [];
+    const now = Date.now();
     for (const a of achievements) {
-      if (!seenRef.current.has(a.id)) {
-        seenRef.current.add(a.id);
-        fresh.push({ id: `${a.id}-${Date.now()}`, achievementId: a.id });
+      if (seenRef.current.has(a.id)) continue;
+      seenRef.current.add(a.id);
+      const unlockedAt = new Date(a.unlocked_at).getTime();
+      if (Number.isNaN(unlockedAt)) continue;
+      const ageSec = (now - unlockedAt) / 1000;
+      if (ageSec >= 0 && ageSec <= FRESH_WINDOW_SEC) {
+        fresh.push({ id: `${a.id}-${now}`, achievementId: a.id });
       }
     }
     if (fresh.length > 0) {
       haptic("success");
+      playAchievementSound();
       setQueue((q) => [...q, ...fresh]);
     }
   }, [achievements]);
