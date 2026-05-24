@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileTopBar } from "@/components/MobileTopBar";
 import { QuickCapture } from "@/components/QuickCapture";
-import { DailyIntro } from "@/components/DailyIntro";
 import { AchievementToast } from "@/components/AchievementToast";
 import { FocusTimer } from "@/components/FocusTimer";
 import { IntroAnimation } from "@/components/IntroAnimation";
@@ -40,7 +39,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <QuickCapture />
-      <DailyIntro />
       <AchievementToast />
       <LootToast />
       <LevelUpToast />
