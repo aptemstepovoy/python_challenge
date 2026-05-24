@@ -1,5 +1,12 @@
-const CACHE = "operator-v1";
-const PRECACHE = ["/", "/today", "/dashboard", "/tasks", "/review", "/manifest.json", "/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"];
+// Bump this whenever you want every client to drop their cache.
+const CACHE = "operator-v3";
+
+const PRECACHE = [
+  "/manifest.json",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -10,11 +17,18 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    (async () => {
+      // Nuke every cache that isn't current so stale HTML/JS chunks die.
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+      await self.clients.claim();
+      // Tell open pages to reload so they pick up the new build immediately.
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const c of clients) {
+        try { c.navigate(c.url); } catch (_) {}
+      }
+    })()
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -23,21 +37,22 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
 
-  // Network-first for HTML pages, cache fallback for offline.
-  if (req.mode === "navigate" || req.headers.get("accept")?.includes("text/html")) {
+  // Always go to network for HTML, Next chunks, and Supabase auth pages.
+  // No HTML caching = no stale UI after redeploy.
+  const isNavigate =
+    req.mode === "navigate" || req.headers.get("accept")?.includes("text/html");
+  const isNextChunk = url.pathname.startsWith("/_next/");
+
+  if (isNavigate || isNextChunk) {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match("/today")))
+      fetch(req).catch(() =>
+        caches.match(req).then((r) => r || new Response("", { status: 504 }))
+      )
     );
     return;
   }
 
-  // Cache-first for static assets.
+  // Cache-first only for true static assets (icons/manifest/sw itself).
   event.respondWith(
     caches.match(req).then((cached) =>
       cached ||
