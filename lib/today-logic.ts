@@ -85,6 +85,24 @@ function scoreTask(t: Task, today: Date, hotBoss: string | null): Priority {
   return { task: t, score, reasons };
 }
 
+export function pickTodayTask(
+  tasks: Task[],
+  today: Date = new Date()
+): Task | null {
+  const todayISO = today.toISOString().slice(0, 10);
+  const candidates = tasks.filter(
+    (t) =>
+      isOpen(t) &&
+      notSnoozed(t, today) &&
+      t.deadline <= todayISO
+  );
+  if (candidates.length === 0) return null;
+  const hot = nearestActiveBossId(today);
+  const scored = candidates.map((t) => scoreTask(t, today, hot));
+  scored.sort((a, b) => a.score - b.score);
+  return scored[0].task;
+}
+
 export function pickMainTask(
   tasks: Task[],
   today: Date = new Date()

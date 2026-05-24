@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { pickMainTask, snoozesLeft } from "@/lib/today-logic";
+import { pickTodayTask, snoozesLeft } from "@/lib/today-logic";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Play, Sparkles } from "lucide-react";
+import { Check, Play, Sparkles, ListPlus } from "lucide-react";
 import { haptic } from "@/lib/haptics";
 import {
   cn,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/utils";
 
 export function MainTaskCard({ compact = false }: { compact?: boolean }) {
+  const router = useRouter();
   const tasks = useStore((s) => s.tasks);
   const startTask = useStore((s) => s.startTask);
   const completeTask = useStore((s) => s.completeTask);
@@ -24,7 +26,7 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
   const snoozesUsedCount = useStore((s) => s.snoozesUsedCount);
 
   const today = new Date();
-  const task = useMemo(() => pickMainTask(tasks, today), [tasks, today]);
+  const task = useMemo(() => pickTodayTask(tasks, today), [tasks, today]);
   const snoozeBudget = snoozesLeft(snoozesUsedDate, snoozesUsedCount, today);
 
   const [justDone, setJustDone] = useState(false);
@@ -49,12 +51,24 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
 
   if (!task) {
     return (
-      <div className="panel-bright corners rounded-md p-4 md:p-5 h-full flex flex-col justify-center items-center text-center">
-        <Sparkles className="h-6 w-6 text-accent-bright mb-2" />
-        <div className="display text-lg text-accent-bright">Чисто</div>
-        <p className="mt-1 text-sm text-muted">
-          Открой задачи и распланируй
+      <div className="panel-bright corners rounded-md p-4 md:p-5 h-full flex flex-col items-center justify-center text-center gap-3">
+        <Sparkles className="h-6 w-6 text-accent-bright" />
+        <div className="display text-lg text-accent-bright leading-tight">
+          На сегодня задач нет
+        </div>
+        <p className="text-sm text-secondary px-2 leading-snug">
+          Но ты можешь взять задачу сам
         </p>
+        <Button
+          size="sm"
+          onClick={() => {
+            haptic("tap");
+            router.push("/tasks");
+          }}
+        >
+          <ListPlus className="mr-1.5 h-3.5 w-3.5" />
+          Взять задачу
+        </Button>
       </div>
     );
   }
@@ -64,7 +78,7 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
       <div className="panel-bright corners rounded-md p-4 md:p-5 h-full flex flex-col items-center justify-center gap-2 text-center border-ok/40">
         <Sparkles className="h-7 w-7 text-ok" />
         <div className="display text-xl text-ok">+{task.xp ?? 25} XP</div>
-        <div className="text-xs text-muted">подтягиваю следующую…</div>
+        <div className="text-xs text-secondary">подтягиваю следующую…</div>
       </div>
     );
   }
@@ -110,7 +124,7 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
         <Badge tone={catTone}>{catLabel}</Badge>
       </div>
 
-      <div className="num text-[10px] uppercase tracking-wider text-muted">
+      <div className="num text-[10px] uppercase tracking-wider text-secondary">
         {task.id}{task.linked_boss ? ` · ${task.linked_boss}` : ""}
       </div>
 
@@ -122,12 +136,12 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
       </h2>
 
       {task.result_definition && !compact && (
-        <p className="mt-2 text-xs leading-snug text-muted line-clamp-2">
+        <p className="mt-2 text-xs leading-snug text-secondary line-clamp-2">
           {task.result_definition}
         </p>
       )}
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-muted">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-secondary">
         <span>
           до <span className="num text-foreground/80">{formatDateRu(task.deadline)}</span>
         </span>
@@ -160,8 +174,8 @@ export function MainTaskCard({ compact = false }: { compact?: boolean }) {
           className={cn(
             "w-full text-center font-mono text-[10px] uppercase tracking-wider transition-colors",
             snoozeBudget > 0
-              ? "text-muted hover:text-pink-bright"
-              : "text-muted/50"
+              ? "text-secondary hover:text-pink-bright"
+              : "text-secondary/40"
           )}
         >
           {snoozeBudget > 0
