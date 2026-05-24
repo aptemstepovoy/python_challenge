@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   User,
@@ -13,22 +13,34 @@ import {
   LineChart,
   Lightbulb,
   ScrollText,
+  Sun,
+  ListChecks,
+  Repeat,
+  Home,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SUPABASE_ENABLED } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { levelFromXP } from "@/lib/xp";
+import { levelFromXP, progressWithinLevel } from "@/lib/xp";
+import { Progress } from "@/components/ui/progress";
+import { CountUp } from "@/components/CountUp";
 import { haptic } from "@/lib/haptics";
 
-const LINKS = [
+const PRIMARY = [
+  { href: "/today", label: "Сегодня", icon: Home },
+  { href: "/habits", label: "Привычки", icon: Repeat },
+  { href: "/tasks", label: "Задачи", icon: ListChecks },
+  { href: "/insights", label: "Инсайты", icon: Lightbulb },
+  { href: "/journal", label: "Отчёт за день", icon: ScrollText },
+  { href: "/review", label: "Ревью недели", icon: Sun },
+];
+
+const SECONDARY = [
   { href: "/dashboard", label: "Обзор", icon: LineChart },
   { href: "/bosses", label: "Боссы", icon: Target },
   { href: "/achievements", label: "Достижения", icon: Trophy },
-  { href: "/insights", label: "Инсайты", icon: Lightbulb },
-  { href: "/journal", label: "Отчёт за день", icon: ScrollText },
-  { href: "/review", label: "Ревью недели", icon: Sparkles },
 ];
 
 export function UserMenu({
@@ -37,8 +49,10 @@ export function UserMenu({
   trigger: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const xp = useStore((s) => s.xp);
   const lvl = levelFromXP(xp);
+  const lvlPct = progressWithinLevel(xp);
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -68,6 +82,9 @@ export function UserMenu({
     router.refresh();
   };
 
+  const isActive = (href: string) =>
+    pathname === href || pathname?.startsWith(href + "/");
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
@@ -75,7 +92,7 @@ export function UserMenu({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           className={cn(
-            "fixed z-50 panel-bright border-l border-border-bright p-5",
+            "fixed z-50 panel-bright border-l border-border-bright p-5 overflow-y-auto",
             "right-0 top-0 h-full w-[88vw] max-w-sm",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
@@ -88,7 +105,7 @@ export function UserMenu({
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
 
-          <div className="space-y-6 pt-2">
+          <div className="space-y-5 pt-2 pb-4">
             <div className="flex items-center gap-3 pr-8">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet to-pink text-white shadow-glow">
                 <User className="h-6 w-6" />
@@ -98,28 +115,76 @@ export function UserMenu({
                   {email ?? "Артём"}
                 </div>
                 <div className="font-mono text-[11px] uppercase tracking-wider text-secondary mt-0.5">
-                  L{lvl.num} · {lvl.title} · {xp} XP
+                  L{lvl.num} · {lvl.title} ·{" "}
+                  <CountUp value={xp} duration={500} /> XP
                 </div>
               </div>
             </div>
+
+            <Progress value={lvlPct} tone="accent" />
 
             <div className="ornament" />
 
             <nav className="space-y-1">
               <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-secondary mb-2 px-2">
-                Разделы
+                Главное
               </div>
-              {LINKS.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-md px-3 py-2.5 text-base text-foreground hover:bg-surface-2 hover:text-accent-bright transition-colors"
-                >
-                  <l.icon className="h-4 w-4 text-accent-bright/80" />
-                  {l.label}
-                </Link>
-              ))}
+              {PRIMARY.map((l) => {
+                const active = isActive(l.href);
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-base transition-colors",
+                      active
+                        ? "bg-surface-2 text-accent-bright border-l-2 border-accent pl-[10px]"
+                        : "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                    )}
+                  >
+                    <l.icon
+                      className={cn(
+                        "h-4 w-4",
+                        active ? "text-accent-bright" : "text-accent-bright/70"
+                      )}
+                    />
+                    {l.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="ornament" />
+
+            <nav className="space-y-1">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-secondary mb-2 px-2">
+                Аналитика
+              </div>
+              {SECONDARY.map((l) => {
+                const active = isActive(l.href);
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-base transition-colors",
+                      active
+                        ? "bg-surface-2 text-accent-bright border-l-2 border-accent pl-[10px]"
+                        : "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                    )}
+                  >
+                    <l.icon
+                      className={cn(
+                        "h-4 w-4",
+                        active ? "text-accent-bright" : "text-accent-bright/70"
+                      )}
+                    />
+                    {l.label}
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="ornament" />

@@ -34,15 +34,39 @@ const ICON_OPTIONS = [
 ];
 
 const COLOR_OPTIONS = [
-  "#d4a574",
-  "#7cc4d8",
-  "#d87c7c",
-  "#5fd97a",
-  "#9d7cd8",
-  "#a0a0a0",
-  "#f3c97a",
-  "#e36767",
+  "#a78bfa",
+  "#ec4899",
+  "#22d3ee",
+  "#34d399",
+  "#fbbf24",
+  "#f472b6",
+  "#67e8f9",
+  "#fca5a5",
 ];
+
+const DAYS = [
+  { v: 1, l: "Пн" },
+  { v: 2, l: "Вт" },
+  { v: 3, l: "Ср" },
+  { v: 4, l: "Чт" },
+  { v: 5, l: "Пт" },
+  { v: 6, l: "Сб" },
+  { v: 0, l: "Вс" },
+];
+
+type FreqMode = "daily" | "weekly_3" | "weekly_1" | "weekly_n" | "custom_days";
+
+function modeFromHabit(habit: Habit | null | undefined): FreqMode {
+  if (!habit) return "daily";
+  if (habit.frequency === "daily") return "daily";
+  if (habit.frequency === "custom_days") return "custom_days";
+  if (habit.frequency === "weekly_n") {
+    if (habit.target_per_week === 3) return "weekly_3";
+    if (habit.target_per_week === 1) return "weekly_1";
+    return "weekly_n";
+  }
+  return "daily";
+}
 
 export function HabitFormDialog({
   open,
@@ -59,9 +83,10 @@ export function HabitFormDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("PenLine");
-  const [color, setColor] = useState("#d4a574");
-  const [frequency, setFrequency] = useState<HabitFrequency>("daily");
-  const [target, setTarget] = useState("7");
+  const [color, setColor] = useState("#a78bfa");
+  const [mode, setMode] = useState<FreqMode>("daily");
+  const [customN, setCustomN] = useState("3");
+  const [days, setDays] = useState<number[]>([1, 3, 5]);
   const [xp, setXp] = useState("15");
   const [activeUntil, setActiveUntil] = useState("");
 
@@ -71,41 +96,70 @@ export function HabitFormDialog({
       setDescription(habit.description);
       setIcon(habit.icon);
       setColor(habit.color);
-      setFrequency(habit.frequency);
-      setTarget(String(habit.target_per_week));
+      setMode(modeFromHabit(habit));
+      setCustomN(String(habit.target_per_week ?? 3));
+      setDays(habit.days_of_week ?? [1, 3, 5]);
       setXp(String(habit.xp_per_completion));
       setActiveUntil(habit.active_until ?? "");
     } else {
       setName("");
       setDescription("");
       setIcon("PenLine");
-      setColor("#d4a574");
-      setFrequency("daily");
-      setTarget("7");
+      setColor("#a78bfa");
+      setMode("daily");
+      setCustomN("3");
+      setDays([1, 3, 5]);
       setXp("15");
       setActiveUntil("");
     }
   }, [habit, open]);
 
+  const toggleDay = (d: number) => {
+    setDays((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort()
+    );
+  };
+
   const save = () => {
     if (!name.trim()) return;
-    const tgt = Math.max(1, Math.min(7, Number(target) || 1));
     const x = Math.max(0, Number(xp) || 0);
+
+    let frequency: HabitFrequency = "daily";
+    let target_per_week = 7;
+    let days_of_week: number[] | undefined = undefined;
+
+    if (mode === "daily") {
+      frequency = "daily";
+      target_per_week = 7;
+    } else if (mode === "weekly_3") {
+      frequency = "weekly_n";
+      target_per_week = 3;
+    } else if (mode === "weekly_1") {
+      frequency = "weekly_n";
+      target_per_week = 1;
+    } else if (mode === "weekly_n") {
+      frequency = "weekly_n";
+      target_per_week = Math.max(1, Math.min(7, Number(customN) || 1));
+    } else if (mode === "custom_days") {
+      frequency = "custom_days";
+      days_of_week = days.length > 0 ? days : [1];
+      target_per_week = days_of_week.length;
+    }
+
     const payload = {
       name: name.trim(),
       description: description.trim(),
       icon,
       color,
       frequency,
-      target_per_week: frequency === "daily" ? 7 : tgt,
+      target_per_week,
+      days_of_week,
       xp_per_completion: x,
       active_until: activeUntil || undefined,
     };
-    if (habit) {
-      updateHabit(habit.id, payload);
-    } else {
-      addHabit(payload);
-    }
+
+    if (habit) updateHabit(habit.id, payload);
+    else addHabit(payload);
     onOpenChange(false);
   };
 
@@ -117,7 +171,7 @@ export function HabitFormDialog({
             {habit ? "Редактировать привычку" : "Новая привычка"}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="max-h-[70vh] overflow-y-auto space-y-4 pr-1">
           <div className="space-y-1.5">
             <Label>Название</Label>
             <Input
@@ -135,33 +189,60 @@ export function HabitFormDialog({
               rows={2}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+
+          <div className="space-y-1.5">
+            <Label>Частота</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as FreqMode)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Каждый день</SelectItem>
+                <SelectItem value="weekly_3">3 раза в неделю</SelectItem>
+                <SelectItem value="weekly_1">1 раз в неделю</SelectItem>
+                <SelectItem value="weekly_n">N раз в неделю</SelectItem>
+                <SelectItem value="custom_days">Свой график (дни)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {mode === "weekly_n" && (
             <div className="space-y-1.5">
-              <Label>Частота</Label>
-              <Select
-                value={frequency}
-                onValueChange={(v) => setFrequency(v as HabitFrequency)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Ежедневно</SelectItem>
-                  <SelectItem value="weekly_n">N раз в неделю</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>
-                {frequency === "daily" ? "Раз/нед" : "Цель/нед"}
-              </Label>
+              <Label>Сколько раз в неделю</Label>
               <Input
                 type="number"
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-                disabled={frequency === "daily"}
+                value={customN}
+                min={1}
+                max={7}
+                onChange={(e) => setCustomN(e.target.value)}
               />
             </div>
+          )}
+
+          {mode === "custom_days" && (
+            <div className="space-y-1.5">
+              <Label>В какие дни</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {DAYS.map((d) => (
+                  <button
+                    key={d.v}
+                    type="button"
+                    onClick={() => toggleDay(d.v)}
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-md border text-sm transition-colors",
+                      days.includes(d.v)
+                        ? "border-transparent bg-gradient-to-br from-violet to-pink text-white"
+                        : "border-border-bright bg-surface-2/50 text-foreground hover:border-accent"
+                    )}
+                  >
+                    {d.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>XP за выполнение</Label>
               <Input
@@ -192,7 +273,7 @@ export function HabitFormDialog({
                     "flex h-9 w-9 items-center justify-center rounded border transition-colors",
                     icon === n
                       ? "border-accent text-accent-bright"
-                      : "border-border text-muted hover:border-accent-dim"
+                      : "border-border text-secondary hover:border-accent-dim"
                   )}
                 >
                   <Icon name={n} className="h-4 w-4" />

@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
-import { BottomTabBar } from "@/components/BottomTabBar";
 import { MobileTopBar } from "@/components/MobileTopBar";
 import { QuickCapture } from "@/components/QuickCapture";
 import { DailyIntro } from "@/components/DailyIntro";
@@ -32,10 +31,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen flex-col md:flex-row">
         <MobileTopBar />
         <Sidebar />
-        <main className="flex-1 overflow-x-hidden pb-24 md:pb-0">
+        <main className="flex-1 overflow-x-hidden pb-8">
           {children}
         </main>
-        <BottomTabBar />
       </div>
       <QuickCapture />
       <DailyIntro />

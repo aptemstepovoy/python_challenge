@@ -1,23 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/lib/store";
 import {
-  dailyHabits,
-  weeklyHabits,
   todayCompletionRatio,
+  visibleTodayHabits,
 } from "@/lib/habits-logic";
 import { HabitDailyCard, HabitWeeklyCard } from "@/components/HabitCard";
 import { HabitHeatmap } from "@/components/HabitHeatmap";
 import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Archive, ArchiveRestore, Trash2, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  Sparkles,
+} from "lucide-react";
 import { Icon } from "@/components/Icon";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import type { Habit } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const DOW_LABEL = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+
+function freqLabel(h: Habit): string {
+  if (h.frequency === "daily") return "ежедневно";
+  if (h.frequency === "custom_days") {
+    const days = (h.days_of_week ?? [])
+      .slice()
+      .sort()
+      .map((d) => DOW_LABEL[d])
+      .join(", ");
+    return `по ${days || "—"}`;
+  }
+  return `${h.target_per_week}× в неделю`;
+}
 
 export default function HabitsPage() {
   const habits = useStore((s) => s.habits);
@@ -30,12 +52,19 @@ export default function HabitsPage() {
   const [open, setOpen] = useState(false);
 
   const today = new Date();
-  const daily = dailyHabits(habits, today);
-  const weekly = weeklyHabits(habits, today);
   const ratio = todayCompletionRatio(habits, habitLogs, today);
   const archived = habits.filter((h) => h.archived);
   const active = habits.filter((h) => !h.archived);
   const allDailyDone = ratio.total > 0 && ratio.done === ratio.total;
+
+  const visible = useMemo(
+    () => visibleTodayHabits(habits, habitLogs, today),
+    [habits, habitLogs, today]
+  );
+  const dailyVisible = visible.filter((h) => h.frequency === "daily");
+  const weeklyVisible = visible.filter(
+    (h) => h.frequency === "weekly_n" || h.frequency === "custom_days"
+  );
 
   const openNew = () => {
     setEditing(null);
@@ -62,8 +91,8 @@ export default function HabitsPage() {
           <h1 className="display text-2xl text-foreground text-glow md:text-3xl">
             Привычки
           </h1>
-          <p className="mt-2 text-sm text-muted">
-            Ежедневные действия которые двигают к целям
+          <p className="mt-2 text-sm text-secondary">
+            Ежедневные действия, которые двигают к целям
           </p>
         </div>
         <Button onClick={openNew} className="self-start md:self-auto">
@@ -74,7 +103,7 @@ export default function HabitsPage() {
 
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
+          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-secondary">
             ◆ Сегодня · {format(today, "EEEE, d MMM", { locale: ru })}
           </div>
           <span className="num text-xs text-foreground">
@@ -86,46 +115,74 @@ export default function HabitsPage() {
           tone={allDailyDone ? "ok" : "accent"}
         />
 
-        {allDailyDone && (
+        {visible.length === 0 && (
           <div className="panel-bright corners flex items-center gap-3 rounded-md p-4">
             <Sparkles className="h-5 w-5 text-accent-bright" />
             <div className="flex-1">
               <div className="display text-sm text-accent-bright">
                 Всё на сегодня
               </div>
-              <div className="text-xs text-muted">
-                Готовься к завтра — открой Tasks
+              <div className="text-xs text-secondary">
+                Можешь отдохнуть или подготовиться к завтра
               </div>
             </div>
           </div>
         )}
 
-        <div className="space-y-2">
-          {daily.map((h) => (
-            <HabitDailyCard key={h.id} habit={h} />
-          ))}
-        </div>
-      </section>
-
-      {weekly.length > 0 && (
-        <section className="space-y-3">
-          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
-            ◆ На неделе
-          </div>
+        {dailyVisible.length > 0 && (
           <div className="space-y-2">
-            {weekly.map((h) => (
-              <HabitWeeklyCard key={h.id} habit={h} />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {dailyVisible.map((h) => (
+                <motion.div
+                  key={h.id}
+                  layout
+                  initial={{ opacity: 1 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.85,
+                    y: -8,
+                    transition: { duration: 0.4 },
+                  }}
+                >
+                  <HabitDailyCard habit={h} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
-        </section>
-      )}
+        )}
+
+        {weeklyVisible.length > 0 && (
+          <div className="space-y-2 pt-2">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-secondary">
+              на неделе
+            </div>
+            <AnimatePresence mode="popLayout">
+              {weeklyVisible.map((h) => (
+                <motion.div
+                  key={h.id}
+                  layout
+                  initial={{ opacity: 1 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.85,
+                    y: -8,
+                    transition: { duration: 0.4 },
+                  }}
+                >
+                  <HabitWeeklyCard habit={h} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+      </section>
 
       <section>
         <HabitHeatmap />
       </section>
 
       <section className="space-y-3">
-        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
+        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-secondary">
           ◆ Управление
         </div>
         <ul className="space-y-1.5">
@@ -145,11 +202,8 @@ export default function HabitsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-foreground">{h.name}</div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-muted">
-                  {h.frequency === "daily"
-                    ? "ежедневно"
-                    : `${h.target_per_week}× в неделю`}{" "}
-                  · +{h.xp_per_completion} XP
+                <div className="font-mono text-[10px] uppercase tracking-wider text-secondary">
+                  {freqLabel(h)} · +{h.xp_per_completion} XP
                 </div>
               </div>
               <div className="flex shrink-0 gap-1">
@@ -186,7 +240,7 @@ export default function HabitsPage() {
 
       {archived.length > 0 && (
         <section className="space-y-3">
-          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
+          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-secondary">
             ◆ Архив
           </div>
           <ul className="space-y-1.5">
@@ -205,7 +259,7 @@ export default function HabitsPage() {
                   <Icon name={h.icon} className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-muted">{h.name}</div>
+                  <div className="text-sm text-secondary">{h.name}</div>
                 </div>
                 <Button
                   variant="ghost"

@@ -78,7 +78,7 @@ export type Insight = {
   created_at: string;
 };
 
-export type HabitFrequency = "daily" | "weekly_n";
+export type HabitFrequency = "daily" | "weekly_n" | "custom_days";
 
 export type Habit = {
   id: string;
@@ -87,6 +87,7 @@ export type Habit = {
   description: string;
   frequency: HabitFrequency;
   target_per_week: number;
+  days_of_week?: number[]; // 0=Sun..6=Sat for custom_days
   xp_per_completion: number;
   linked_kgi?: string;
   linked_boss?: string;

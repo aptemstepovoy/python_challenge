@@ -66,8 +66,46 @@ export function dailyHabits(habits: Habit[], today: Date = new Date()): Habit[] 
 
 export function weeklyHabits(habits: Habit[], today: Date = new Date()): Habit[] {
   return habits.filter(
-    (h) => h.frequency === "weekly_n" && isHabitActive(h, today)
+    (h) =>
+      (h.frequency === "weekly_n" || h.frequency === "custom_days") &&
+      isHabitActive(h, today)
   );
+}
+
+/**
+ * Should this habit appear on the "today" surface?
+ * - daily: yes unless completed today
+ * - weekly_n: yes unless this week's count hit target OR completed today
+ * - custom_days: yes only on selected days, unless completed today
+ */
+export function shouldShowToday(
+  habit: Habit,
+  logs: HabitLog[],
+  today: Date = new Date()
+): boolean {
+  if (!isHabitActive(habit, today)) return false;
+  const todayISO = format(today, "yyyy-MM-dd");
+  if (logForToday(logs, habit.id, todayISO)) return false;
+
+  if (habit.frequency === "daily") return true;
+  if (habit.frequency === "weekly_n") {
+    const done = logsInWeek(logs, habit.id, today).length;
+    return done < habit.target_per_week;
+  }
+  if (habit.frequency === "custom_days") {
+    const dow = today.getDay();
+    return !!habit.days_of_week?.includes(dow);
+  }
+  return false;
+}
+
+/** All habits to display on /today, after frequency + completion filtering */
+export function visibleTodayHabits(
+  habits: Habit[],
+  logs: HabitLog[],
+  today: Date = new Date()
+): Habit[] {
+  return habits.filter((h) => shouldShowToday(h, logs, today));
 }
 
 export function todayCompletionRatio(
