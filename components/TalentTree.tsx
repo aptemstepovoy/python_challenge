@@ -9,8 +9,22 @@ import { cn } from "@/lib/utils";
 import { haptic } from "@/lib/haptics";
 import type { TalentId } from "@/lib/types";
 
-export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+export function TalentTree({
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (o: boolean) => void;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp! : internalOpen;
+  const setOpen = (o: boolean) => {
+    if (isControlled) onOpenChange?.(o);
+    else setInternalOpen(o);
+  };
   const points = useStore((s) => s.talentPoints);
   const earned = useStore((s) => s.talentPointsEarned);
   const ranks = useStore((s) => s.talents);
@@ -34,7 +48,9 @@ export function TalentTree({ trigger }: { trigger: React.ReactNode }) {
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+      {trigger && (
+        <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+      )}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm" />
         <DialogPrimitive.Content

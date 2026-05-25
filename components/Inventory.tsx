@@ -22,8 +22,22 @@ const RARITY_ORDER: Rarity[] = [
   "common",
 ];
 
-export function Inventory({ trigger }: { trigger: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+export function Inventory({
+  trigger,
+  open: openProp,
+  onOpenChange,
+}: {
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (o: boolean) => void;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp! : internalOpen;
+  const setOpen = (o: boolean) => {
+    if (isControlled) onOpenChange?.(o);
+    else setInternalOpen(o);
+  };
   const inventory = useStore((s) => s.inventory);
   const useItem = useStore((s) => s.useItem);
   const [selected, setSelected] = useState<ItemId | null>(null);
@@ -45,7 +59,9 @@ export function Inventory({ trigger }: { trigger: React.ReactNode }) {
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+      {trigger && (
+        <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+      )}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm" />
         <DialogPrimitive.Content

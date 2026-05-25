@@ -107,6 +107,8 @@ export function UserMenu({
   const lvlPct = progressWithinLevel(xp);
   const streakFreezes = useStore((s) => s.streakFreezes);
   const [eveningOpen, setEveningOpen] = useState(false);
+  const [talentsOpen, setTalentsOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
   const talentPoints = useStore((s) => s.talentPoints);
   const inventoryCount = useStore((s) => s.inventory.length);
   const [email, setEmail] = useState<string | null>(null);
@@ -250,47 +252,47 @@ export function UserMenu({
                 Прогресс
               </div>
 
-              <TalentTree
-                trigger={
-                  <button
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
-                      "text-foreground hover:bg-surface-2 hover:text-accent-bright"
-                    )}
-                  >
-                    <span className="flex items-center gap-3">
-                      <Sparkle className="h-4 w-4 text-accent-bright/70" />
-                      Таланты
-                    </span>
-                    {talentPoints > 0 && (
-                      <span className="flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent-bright">
-                        +{talentPoints}
-                      </span>
-                    )}
-                  </button>
-                }
-              />
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setTimeout(() => setTalentsOpen(true), 200);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
+                  "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                )}
+              >
+                <span className="flex items-center gap-3">
+                  <Sparkle className="h-4 w-4 text-accent-bright/70" />
+                  Таланты
+                </span>
+                {talentPoints > 0 && (
+                  <span className="flex items-center gap-1 rounded-full bg-accent/20 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent-bright">
+                    +{talentPoints}
+                  </span>
+                )}
+              </button>
 
-              <Inventory
-                trigger={
-                  <button
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
-                      "text-foreground hover:bg-surface-2 hover:text-accent-bright"
-                    )}
-                  >
-                    <span className="flex items-center gap-3">
-                      <Package className="h-4 w-4 text-accent-bright/70" />
-                      Инвентарь
-                    </span>
-                    {inventoryCount > 0 && (
-                      <span className="font-mono text-[10px] uppercase tracking-wider text-secondary num">
-                        {inventoryCount}
-                      </span>
-                    )}
-                  </button>
-                }
-              />
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setTimeout(() => setInventoryOpen(true), 200);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
+                  "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                )}
+              >
+                <span className="flex items-center gap-3">
+                  <Package className="h-4 w-4 text-accent-bright/70" />
+                  Инвентарь
+                </span>
+                {inventoryCount > 0 && (
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-secondary num">
+                    {inventoryCount}
+                  </span>
+                )}
+              </button>
 
               <button
                 onClick={() => {
@@ -330,6 +332,8 @@ export function UserMenu({
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
       <EveningRitual open={eveningOpen} onOpenChange={setEveningOpen} />
+      <TalentTree open={talentsOpen} onOpenChange={setTalentsOpen} />
+      <Inventory open={inventoryOpen} onOpenChange={setInventoryOpen} />
     </DialogPrimitive.Root>
   );
 }
