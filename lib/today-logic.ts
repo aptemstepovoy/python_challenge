@@ -89,18 +89,33 @@ export function pickTodayTask(
   tasks: Task[],
   today: Date = new Date()
 ): Task | null {
+  const list = pickTodayTasks(tasks, today);
+  return list[0] ?? null;
+}
+
+/**
+ * Все задачи, которые «лежат на столе сегодня»:
+ *  - start_date уже наступил (или сегодня)
+ *  - status != done
+ *  - не отложена до даты в будущем
+ * Сортировка: просроченные → в работе → дедлайн сегодня → дедлайн скоро.
+ */
+export function pickTodayTasks(
+  tasks: Task[],
+  today: Date = new Date()
+): Task[] {
   const todayISO = today.toISOString().slice(0, 10);
   const candidates = tasks.filter(
     (t) =>
       isOpen(t) &&
       notSnoozed(t, today) &&
-      t.deadline <= todayISO
+      (t.start_date ?? todayISO) <= todayISO
   );
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0) return [];
   const hot = nearestActiveBossId(today);
   const scored = candidates.map((t) => scoreTask(t, today, hot));
   scored.sort((a, b) => a.score - b.score);
-  return scored[0].task;
+  return scored.map((s) => s.task);
 }
 
 export function pickMainTask(

@@ -5,7 +5,7 @@ import { useStore } from "@/lib/store";
 import { CharacterCard } from "@/components/CharacterCard";
 import { TodaySummary } from "@/components/TodaySummary";
 import { TodayCombined } from "@/components/TodayCombined";
-import { MainTaskCard } from "@/components/MainTaskCard";
+import { TodayTasksCard } from "@/components/TodayTasksCard";
 import { DailyChest } from "@/components/DailyChest";
 import { DailyQuests } from "@/components/DailyQuests";
 import { StreakDangerBanner } from "@/components/StreakDangerBanner";
@@ -69,12 +69,11 @@ export default function TodayPage() {
 
       <DailyChest />
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
+      <TodayTasksCard />
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <TodaySummary />
-        <MainTaskCard compact />
-        <div className="col-span-2">
-          <TodayCombined />
-        </div>
+        <TodayCombined />
       </div>
 
       <DailyQuests />
