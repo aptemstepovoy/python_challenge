@@ -13,27 +13,24 @@ import { Input } from "@/components/ui/input";
 import { TaskItem } from "@/components/TaskItem";
 import { TaskFormDialog } from "@/components/TaskFormDialog";
 import { useStore } from "@/lib/store";
-import { cn, isOverdue } from "@/lib/utils";
+import { cn, formatDateRu } from "@/lib/utils";
 import {
   addDays,
-  differenceInCalendarDays,
   endOfMonth,
   endOfWeek,
+  format,
   parseISO,
 } from "date-fns";
+import { ru } from "date-fns/locale";
 import type { Task } from "@/lib/types";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Check, Undo2 } from "lucide-react";
 
-type Filter = "buckets" | "priority" | "by_step" | "overdue" | "all";
+type Tab = "active" | "by_step" | "done";
 
-const PRIORITY_STEPS = ["S1", "S1.1", "S2", "S2.1", "S3", "S4"];
-
-const filters: { key: Filter; label: string }[] = [
-  { key: "buckets", label: "По срокам" },
-  { key: "priority", label: "Приоритетные" },
+const TABS: { key: Tab; label: string }[] = [
+  { key: "active", label: "Активные" },
   { key: "by_step", label: "По шагам" },
-  { key: "overdue", label: "Просрочено" },
-  { key: "all", label: "Все" },
+  { key: "done", label: "Выполненные" },
 ];
 
 function Bucket({
@@ -41,24 +38,27 @@ function Bucket({
   title,
   tone,
   tasks,
+  hint,
 }: {
   id: string;
   title: string;
   tone: "danger" | "accent" | "warn" | "muted";
   tasks: Task[];
+  hint?: string;
 }) {
   const toneClass =
     tone === "danger"
       ? "text-danger-bright"
       : tone === "accent"
-        ? "text-accent-bright"
-        : tone === "warn"
-          ? "text-pink-bright"
-          : "text-secondary";
+      ? "text-accent-bright"
+      : tone === "warn"
+      ? "text-pink-bright"
+      : "text-secondary";
+
   return (
     <AccordionItem value={id}>
       <AccordionTrigger>
-        <div className="flex w-full items-center gap-4 pr-3">
+        <div className="flex w-full items-center gap-3 pr-3">
           <span
             className={cn(
               "font-mono text-sm uppercase tracking-[0.18em]",
@@ -67,10 +67,13 @@ function Bucket({
           >
             ◆ {title}
           </span>
+          {hint && (
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted truncate">
+              {hint}
+            </span>
+          )}
           <span className="flex-1" />
-          <span className={cn("num text-sm", toneClass)}>
-            {tasks.length}
-          </span>
+          <span className={cn("num text-sm", toneClass)}>{tasks.length}</span>
         </div>
       </AccordionTrigger>
       <AccordionContent>
@@ -88,47 +91,46 @@ function Bucket({
   );
 }
 
-function PriorityAccordion({
-  title,
-  tasks,
-}: {
-  title: string;
-  tasks: Task[];
-}) {
+function DoneRow({ task }: { task: Task }) {
+  const cycle = useStore((s) => s.cycleTaskStatus);
+  const completed = task.completed_at
+    ? format(parseISO(task.completed_at), "d MMM · HH:mm", { locale: ru })
+    : "—";
   return (
-    <AccordionItem value={`prio-${title}`}>
-      <AccordionTrigger>
-        <div className="flex w-full items-center gap-4 pr-3">
-          <span className="font-mono text-sm uppercase tracking-[0.18em] text-accent-bright">
-            ◆ {title}
-          </span>
-          <span className="flex-1" />
-          <span className="num text-sm text-secondary">{tasks.length}</span>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>
-        {tasks.length === 0 ? (
-          <div className="py-3 text-base text-secondary">Задач нет</div>
-        ) : (
-          <div className="space-y-1">
-            {tasks.map((t) => (
-              <TaskItem key={t.id} task={t} />
-            ))}
-          </div>
-        )}
-      </AccordionContent>
-    </AccordionItem>
+    <div className="flex items-center gap-2.5 rounded-md border border-border bg-surface px-3 py-2 group">
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-ok-bright bg-ok-bright text-background">
+        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+      </div>
+      <span className="num shrink-0 text-[10px] text-muted">{task.id}</span>
+      <span className="flex-1 min-w-0 truncate text-sm text-muted line-through">
+        {task.title}
+      </span>
+      <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-secondary">
+        {completed}
+      </span>
+      <span className="shrink-0 num text-[10px] text-accent">
+        +{task.xp ?? 25}
+      </span>
+      <button
+        onClick={() => cycle(task.id)}
+        className="shrink-0 text-secondary hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label="Восстановить"
+        title="Восстановить"
+      >
+        <Undo2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }
 
 export default function TasksPage() {
   const allTasks = useStore((s) => s.tasks);
   const steps = useStore((s) => s.steps);
-  const [filter, setFilter] = useState<Filter>("buckets");
+  const [tab, setTab] = useState<Tab>("active");
   const [addOpen, setAddOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const tasks = useMemo(() => {
+  const searchFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return allTasks;
     return allTasks.filter(
@@ -151,88 +153,87 @@ export default function TasksPage() {
     const m6End = addDays(today, 180);
     const yearEnd = addDays(today, 365);
 
-    const open = tasks.filter((t) => t.status !== "done");
+    const open = searchFiltered.filter((t) => t.status !== "done");
 
+    // Просрочено — exclusive (deadline в прошлом)
     const overdue = open
       .filter((t) => t.deadline < todayISO)
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
+    // Сегодня — exclusive (deadline ровно сегодня)
     const todayList = open
       .filter((t) => t.deadline === todayISO)
       .sort((a, b) => (b.xp ?? 25) - (a.xp ?? 25));
 
+    // Все остальные секции — inclusive (deadline в диапазоне [today, X],
+    // включая сегодня). Тот же task может появиться в неделе И в месяце.
+    const inRange = (t: Task, end: Date) => {
+      const d = parseISO(t.deadline);
+      return d >= today && d <= end;
+    };
+
     const week = open
-      .filter((t) => {
-        const d = parseISO(t.deadline);
-        return d > today && d <= weekEnd;
-      })
+      .filter((t) => inRange(t, weekEnd))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     const month = open
-      .filter((t) => {
-        const d = parseISO(t.deadline);
-        return d > weekEnd && d <= monthEnd;
-      })
+      .filter((t) => inRange(t, monthEnd))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     const q3 = open
-      .filter((t) => {
-        const d = parseISO(t.deadline);
-        return d > monthEnd && d <= q3End;
-      })
+      .filter((t) => inRange(t, q3End))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     const m6 = open
-      .filter((t) => {
-        const d = parseISO(t.deadline);
-        return d > q3End && d <= m6End;
-      })
+      .filter((t) => inRange(t, m6End))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     const year = open
-      .filter((t) => {
-        const d = parseISO(t.deadline);
-        return d > m6End && d <= yearEnd;
-      })
+      .filter((t) => inRange(t, yearEnd))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
     const later = open
       .filter((t) => parseISO(t.deadline) > yearEnd)
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
 
-    return { overdue, today: todayList, week, month, q3, m6, year, later };
-  }, [tasks]);
+    return {
+      overdue,
+      today: todayList,
+      week,
+      month,
+      q3,
+      m6,
+      year,
+      later,
+      weekEnd,
+      monthEnd,
+      q3End,
+      m6End,
+      yearEnd,
+      totalOpen: open.length,
+    };
+  }, [searchFiltered]);
 
-  const totalOpen =
-    buckets.overdue.length +
-    buckets.today.length +
-    buckets.week.length +
-    buckets.month.length +
-    buckets.q3.length +
-    buckets.m6.length +
-    buckets.year.length +
-    buckets.later.length;
-
-  const priorityByStep = useMemo(() => {
-    const map: Record<string, Task[]> = {};
-    for (const t of tasks) {
-      if (t.status === "done") continue;
-      if (!PRIORITY_STEPS.includes(t.step_id)) continue;
-      (map[t.step_id] ??= []).push(t);
-    }
-    for (const k of Object.keys(map)) {
-      map[k].sort((a, b) => a.deadline.localeCompare(b.deadline));
-    }
-    return map;
-  }, [tasks]);
-
-  const overdueOnly = useMemo(
+  const doneTasks = useMemo(
     () =>
-      tasks
-        .filter((t) => t.status !== "done" && isOverdue(t.deadline))
-        .sort((a, b) => a.deadline.localeCompare(b.deadline)),
-    [tasks]
+      searchFiltered
+        .filter((t) => t.status === "done")
+        .sort((a, b) =>
+          (b.completed_at ?? "").localeCompare(a.completed_at ?? "")
+        ),
+    [searchFiltered]
   );
+
+  const doneByMonth = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    for (const t of doneTasks) {
+      const d = t.completed_at ?? "1970-01-01";
+      const key = d.slice(0, 7); // YYYY-MM
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(t);
+    }
+    return Array.from(map.entries());
+  }, [doneTasks]);
 
   return (
     <div className="p-4 space-y-6 md:p-10 md:space-y-8">
@@ -245,7 +246,10 @@ export default function TasksPage() {
             Когда нужно сделать · что важно сейчас
           </p>
         </div>
-        <Button onClick={() => setAddOpen(true)} className="self-start md:self-auto">
+        <Button
+          onClick={() => setAddOpen(true)}
+          className="self-start md:self-auto"
+        >
           <Plus className="mr-1.5 h-4 w-4" />
           Создать задачу
         </Button>
@@ -272,32 +276,30 @@ export default function TasksPage() {
       </div>
 
       <div className="-mx-1 flex flex-wrap gap-2 px-1">
-        {filters.map((f) => (
+        {TABS.map((t) => (
           <Button
-            key={f.key}
-            variant={filter === f.key ? "default" : "outline"}
+            key={t.key}
+            variant={tab === t.key ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter(f.key)}
+            onClick={() => setTab(t.key)}
             className="font-mono uppercase tracking-wider text-xs"
           >
-            {f.label}
+            {t.label}
+            {t.key === "active" && (
+              <span className="ml-1.5 num">
+                {buckets.totalOpen}
+              </span>
+            )}
+            {t.key === "done" && (
+              <span className="ml-1.5 num">{doneTasks.length}</span>
+            )}
           </Button>
         ))}
       </div>
 
-      {hasQuery && (
-        <div className="font-mono text-xs uppercase tracking-wider text-secondary">
-          найдено{" "}
-          <span className="num text-accent-bright">
-            {tasks.filter((t) => t.status !== "done").length}
-          </span>{" "}
-          из {allTasks.filter((t) => t.status !== "done").length}
-        </div>
-      )}
-
-      {filter === "buckets" && (
+      {tab === "active" && (
         <div>
-          {totalOpen === 0 ? (
+          {buckets.totalOpen === 0 && !hasQuery ? (
             <div className="panel corners rounded-md p-6 text-center">
               <div className="display text-xl text-accent-bright">
                 Все задачи закрыты
@@ -326,12 +328,14 @@ export default function TasksPage() {
                 : {})}
               className="space-y-3"
             >
-              <Bucket
-                id="overdue"
-                title="Просрочено"
-                tone="danger"
-                tasks={buckets.overdue}
-              />
+              {buckets.overdue.length > 0 && (
+                <Bucket
+                  id="overdue"
+                  title="Просрочено"
+                  tone="danger"
+                  tasks={buckets.overdue}
+                />
+              )}
               <Bucket
                 id="today"
                 title="Сегодня"
@@ -342,30 +346,45 @@ export default function TasksPage() {
                 id="week"
                 title="Эта неделя"
                 tone="warn"
+                hint={`до ${formatDateRu(
+                  buckets.weekEnd.toISOString().slice(0, 10)
+                )}`}
                 tasks={buckets.week}
               />
               <Bucket
                 id="month"
                 title="Этот месяц"
                 tone="muted"
+                hint={`до ${formatDateRu(
+                  buckets.monthEnd.toISOString().slice(0, 10)
+                )}`}
                 tasks={buckets.month}
               />
               <Bucket
                 id="q3"
                 title="3 месяца"
                 tone="muted"
+                hint={`до ${formatDateRu(
+                  buckets.q3End.toISOString().slice(0, 10)
+                )}`}
                 tasks={buckets.q3}
               />
               <Bucket
                 id="m6"
                 title="6 месяцев"
                 tone="muted"
+                hint={`до ${formatDateRu(
+                  buckets.m6End.toISOString().slice(0, 10)
+                )}`}
                 tasks={buckets.m6}
               />
               <Bucket
                 id="year"
                 title="Год"
                 tone="muted"
+                hint={`до ${formatDateRu(
+                  buckets.yearEnd.toISOString().slice(0, 10)
+                )}`}
                 tasks={buckets.year}
               />
               {buckets.later.length > 0 && (
@@ -378,49 +397,57 @@ export default function TasksPage() {
               )}
             </Accordion>
           )}
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-wider text-muted leading-relaxed">
+            ◆ «Эта неделя», «Этот месяц», «3 месяца» и т.д. — фильтры по
+            верхней границе дедлайна, включая сегодня. Одна задача может
+            попасть в несколько секций. «Просрочено» и «Сегодня» —
+            отдельные, без перекрытия.
+          </p>
         </div>
       )}
 
-      {filter === "priority" && (
-        <Accordion
-          type="multiple"
-          defaultValue={PRIORITY_STEPS.slice(0, 3)}
-          className="space-y-3"
-        >
-          {PRIORITY_STEPS.map((sid) => {
-            const step = steps.find((s) => s.id === sid);
-            if (!step) return null;
-            const list = priorityByStep[sid] ?? [];
-            return (
-              <PriorityAccordion
-                key={sid}
-                title={`${sid} — ${step.title}`}
-                tasks={list}
-              />
-            );
-          })}
-        </Accordion>
+      {tab === "by_step" && (
+        <StepAccordionList
+          steps={steps}
+          tasks={searchFiltered.filter((t) => t.status !== "done")}
+        />
       )}
 
-      {filter === "overdue" && (
-        <Accordion
-          type="multiple"
-          defaultValue={["overdue"]}
-          className="space-y-3"
-        >
-          <Bucket
-            id="overdue"
-            title="Просрочено"
-            tone="danger"
-            tasks={overdueOnly}
-          />
-        </Accordion>
-      )}
-
-      {filter === "all" && <StepAccordionList steps={steps} tasks={tasks} />}
-
-      {filter === "by_step" && (
-        <StepAccordionList steps={steps} tasks={tasks} />
+      {tab === "done" && (
+        <div>
+          {doneTasks.length === 0 ? (
+            <div className="panel corners rounded-md p-6 text-center">
+              <div className="display text-xl text-accent-bright">
+                Пока ничего не закрыто
+              </div>
+              <p className="mt-2 text-base text-secondary">
+                Сделанные задачи будут собираться здесь.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {doneByMonth.map(([month, list]) => (
+                <div key={month} className="space-y-2">
+                  <div className="flex items-baseline justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-secondary">
+                    <span>
+                      {format(parseISO(`${month}-01`), "LLLL yyyy", {
+                        locale: ru,
+                      })}
+                    </span>
+                    <span className="num text-foreground">
+                      {list.length}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {list.map((t) => (
+                      <DoneRow key={t.id} task={t} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <TaskFormDialog open={addOpen} onOpenChange={setAddOpen} />
