@@ -51,9 +51,9 @@ function ProgressRings({
     >
       <defs>
         <linearGradient id="ring-xp" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="#a78bfa" />
-          <stop offset="60%" stopColor="#ec4899" />
-          <stop offset="100%" stopColor="#22d3ee" />
+          <stop offset="0%" stopColor="#7c5cff" />
+          <stop offset="55%" stopColor="#f25fa9" />
+          <stop offset="100%" stopColor="#39d6f0" />
         </linearGradient>
         <linearGradient id="ring-boss" x1="0" x2="1" y1="0" y2="1">
           <stop offset="0%" stopColor={trim} stopOpacity="0.95" />
@@ -134,30 +134,30 @@ export function CharacterCard() {
     lvl.num >= 26
       ? "#ffffff"
       : lvl.num >= 21
-      ? "#c4b5fd"
+      ? "#a594ff"
       : lvl.num >= 16
       ? "#10b981"
       : lvl.num >= 11
-      ? "#fbbf24"
+      ? "#f5b740"
       : lvl.num >= 7
-      ? "#22d3ee"
+      ? "#39d6f0"
       : lvl.num >= 4
-      ? "#ec4899"
-      : "#a78bfa";
+      ? "#f25fa9"
+      : "#7c5cff";
   const ringTrim =
     lvl.num >= 26
-      ? "#fcd34d"
+      ? "#ffd073"
       : lvl.num >= 21
       ? "#e9d5ff"
       : lvl.num >= 16
       ? "#86efac"
       : lvl.num >= 11
-      ? "#fcd34d"
+      ? "#ffd073"
       : lvl.num >= 7
-      ? "#67e8f9"
+      ? "#7ee9fa"
       : lvl.num >= 4
-      ? "#f472b6"
-      : "#c4b5fd";
+      ? "#ff7ec0"
+      : "#a594ff";
 
   return (
     <div className="panel-hero corners relative overflow-hidden rounded-md p-3 md:p-4 h-full flex flex-col">

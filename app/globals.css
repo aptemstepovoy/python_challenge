@@ -5,8 +5,8 @@
 @layer base {
   html,
   body {
-    background: #0a0814;
-    color: #ece8f5;
+    background: #07080d;
+    color: #e8ebf5;
     font-size: 16px;
   }
   body {
@@ -14,97 +14,140 @@
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Subtle single ambient — replaces the noisy 3-color radial cocktail */
     background-image:
-      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(167, 139, 250, 0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 50% at 100% 100%, rgba(236, 72, 153, 0.07) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 0% 50%, rgba(34, 211, 238, 0.04) 0%, transparent 60%);
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(124, 92, 255, 0.08) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 40% at 100% 100%, rgba(57, 214, 240, 0.03) 0%, transparent 70%);
     background-attachment: fixed;
   }
   ::selection {
-    background: #a78bfa;
-    color: #0a0814;
+    background: rgba(124, 92, 255, 0.4);
+    color: #ffffff;
   }
   * {
-    border-color: #2d2845;
+    border-color: #262b3a;
   }
   h1, h2, h3 {
-    letter-spacing: 0.01em;
-    font-weight: 500;
+    letter-spacing: -0.01em;
+    font-weight: 600;
   }
-  /* Bump weights for readability on dark bg */
   .font-mono {
     font-weight: 500;
+    letter-spacing: -0.02em;
   }
-  /* Brighter muted for readability on dark bg */
+  /* Three-tier text scale on dark bg */
   .text-muted {
-    color: #b8b1cc;
+    color: #6b7187;
   }
-  /* Even brighter subtle "secondary" text */
   .text-secondary {
-    color: #d4cce5;
+    color: #9aa0b4;
   }
 }
 
 @layer utilities {
+  /* Tabular numeric — keep mono crisp for numbers */
   .num {
     font-family: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
+
+  /* Display — modern geometric (Space Grotesk), tight tracking */
   .display {
-    font-family: var(--font-display), Forum, "Cormorant Garamond", serif;
-    letter-spacing: 0.02em;
-    font-weight: 400;
+    font-family: var(--font-display), "Manrope", Inter, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 600;
   }
+
+  /* Glow text — subtle, accent-coloured */
   .text-glow {
-    text-shadow: 0 0 18px rgba(196, 181, 253, 0.45);
+    text-shadow: 0 0 20px rgba(165, 148, 255, 0.4);
   }
   .text-glow-soft {
-    text-shadow: 0 0 10px rgba(167, 139, 250, 0.35);
+    text-shadow: 0 0 10px rgba(124, 92, 255, 0.3);
   }
+
   .text-gradient {
-    background: linear-gradient(135deg, #c4b5fd 0%, #f472b6 50%, #67e8f9 100%);
+    background: linear-gradient(135deg, #a594ff 0%, #f25fa9 55%, #7ee9fa 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+
+  /* Cards — flat layered surfaces, subtle inner highlight, soft drop */
   .panel {
     background:
-      linear-gradient(180deg, rgba(26, 21, 48, 0.85) 0%, rgba(16, 12, 31, 0.95) 100%),
-      radial-gradient(circle at 30% 0%, rgba(167, 139, 250, 0.06) 0%, transparent 50%);
-    border: 1px solid #2d2845;
+      linear-gradient(180deg, rgba(20, 24, 36, 0.85) 0%, rgba(14, 17, 26, 0.85) 100%);
+    border: 1px solid #262b3a;
     box-shadow:
-      inset 0 1px 0 0 rgba(196, 181, 253, 0.06),
-      0 0 0 1px rgba(0, 0, 0, 0.25);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+      0 8px 24px -12px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
+
   .panel-bright {
     background:
-      linear-gradient(180deg, rgba(37, 31, 61, 0.95) 0%, rgba(26, 21, 48, 1) 100%),
-      radial-gradient(circle at 50% 0%, rgba(167, 139, 250, 0.1) 0%, transparent 60%);
-    border: 1px solid #4a4170;
+      linear-gradient(180deg, rgba(28, 32, 48, 0.96) 0%, rgba(20, 24, 36, 0.96) 100%);
+    border: 1px solid #2f3548;
     box-shadow:
-      inset 0 1px 0 0 rgba(196, 181, 253, 0.12),
-      0 0 0 1px rgba(0, 0, 0, 0.25),
-      0 0 36px -10px rgba(167, 139, 250, 0.25);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 12px 32px -14px rgba(0, 0, 0, 0.65);
   }
+
+  /* Hero — the only place where the magic gradient appears */
   .panel-hero {
     background:
-      linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(236, 72, 153, 0.06) 50%, rgba(34, 211, 238, 0.04) 100%),
-      linear-gradient(180deg, #1a1530 0%, #100c1f 100%);
-    border: 1px solid #4a4170;
+      linear-gradient(135deg, rgba(124, 92, 255, 0.10) 0%, rgba(242, 95, 169, 0.05) 55%, rgba(57, 214, 240, 0.04) 100%),
+      linear-gradient(180deg, #14182298 0%, #0b0e16ff 100%);
+    border: 1px solid #2f3548;
     box-shadow:
-      inset 0 1px 0 0 rgba(196, 181, 253, 0.18),
-      0 0 0 1px rgba(0, 0, 0, 0.3),
-      0 0 50px -10px rgba(167, 139, 250, 0.4);
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 20px 48px -20px rgba(0, 0, 0, 0.7),
+      0 0 64px -16px rgba(124, 92, 255, 0.28);
   }
+
+  /* Compact "corner brackets" replaced with a clean micro-border treatment */
+  .corners {
+    position: relative;
+  }
+  .corners::before,
+  .corners::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgba(165, 148, 255, 0.55);
+    border-style: solid;
+    border-width: 0;
+    pointer-events: none;
+    opacity: 0.45;
+  }
+  .corners::before {
+    top: 6px;
+    left: 6px;
+    border-top-width: 1.5px;
+    border-left-width: 1.5px;
+    border-top-left-radius: 4px;
+  }
+  .corners::after {
+    bottom: 6px;
+    right: 6px;
+    border-bottom-width: 1.5px;
+    border-right-width: 1.5px;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* Section divider — thin centered ornament */
   .ornament {
     position: relative;
     height: 1px;
     background: linear-gradient(
       90deg,
       transparent 0%,
-      #2d2845 25%,
-      #4a4170 50%,
-      #2d2845 75%,
+      #262b3a 30%,
+      #3a4156 50%,
+      #262b3a 70%,
       transparent 100%
     );
   }
@@ -114,25 +157,34 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    color: #a78bfa;
-    font-size: 9px;
-    background: #0a0814;
-    padding: 0 6px;
+    color: #7c5cff;
+    font-size: 8px;
+    background: #07080d;
+    padding: 0 8px;
+    opacity: 0.7;
   }
-  /* Hero shimmer for important elements */
+
+  /* Animated shimmer text — for hero level numbers, etc. */
   .shimmer-text {
     background: linear-gradient(
       90deg,
-      #ece8f5 0%,
-      #c4b5fd 25%,
-      #f472b6 50%,
-      #c4b5fd 75%,
-      #ece8f5 100%
+      #e8ebf5 0%,
+      #a594ff 25%,
+      #ff7ec0 50%,
+      #a594ff 75%,
+      #e8ebf5 100%
     );
     background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     animation: shimmer 4s linear infinite;
+  }
+
+  /* Frosted overlay for modals */
+  .frosted {
+    background: rgba(7, 8, 13, 0.78);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
   }
 }

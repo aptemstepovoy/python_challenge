@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Forum } from "next/font/google";
+import { Inter, JetBrains_Mono, Manrope } from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import { PWARegister } from "@/components/PWARegister";
 import { CloudSync } from "@/components/CloudSync";
@@ -17,11 +17,11 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
-const forum = Forum({
+const display = Manrope({
   subsets: ["latin", "cyrillic"],
   variable: "--font-display",
   display: "swap",
-  weight: ["400"],
+  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0a0a0a",
+  themeColor: "#07080d",
 };
 
 export default function RootLayout({
@@ -58,7 +58,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark">
       <body
-        className={`${inter.variable} ${jetbrains.variable} ${forum.variable}`}
+        className={`${inter.variable} ${jetbrains.variable} ${display.variable}`}
       >
         <AppShell>{children}</AppShell>
         <PWARegister />

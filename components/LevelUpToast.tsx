@@ -1,33 +1,55 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/lib/store";
 import { levelFromXP } from "@/lib/xp";
 import { playAchievementSound } from "@/lib/sound";
 import { haptic } from "@/lib/haptics";
 
+// How long after mount we treat store changes as "hydration / catch-up"
+// rather than a real level-up that deserves a celebration.
+const SETTLE_MS = 2500;
+
 export function LevelUpToast() {
-  const xp = useStore((s) => s.xp);
-  const prevLevelRef = useRef<number | null>(null);
   const [showLevel, setShowLevel] = useState<number | null>(null);
 
   useEffect(() => {
-    const cur = levelFromXP(xp);
-    if (prevLevelRef.current === null) {
-      prevLevelRef.current = cur.num;
-      return;
-    }
-    if (cur.num > prevLevelRef.current) {
-      setShowLevel(cur.num);
-      haptic("success");
-      playAchievementSound();
-      const t = setTimeout(() => setShowLevel(null), 3800);
-      prevLevelRef.current = cur.num;
-      return () => clearTimeout(t);
-    }
-    prevLevelRef.current = cur.num;
-  }, [xp]);
+    let prev = levelFromXP(useStore.getState().xp).num;
+    let primed = false;
+
+    const settleTimer = setTimeout(() => {
+      // After mount + hydration, lock in the current level as baseline.
+      prev = levelFromXP(useStore.getState().xp).num;
+      primed = true;
+    }, SETTLE_MS);
+
+    const unsub = useStore.subscribe((state) => {
+      const cur = levelFromXP(state.xp).num;
+      if (!primed) {
+        // Track silently during hydration window.
+        prev = cur;
+        return;
+      }
+      if (cur > prev) {
+        setShowLevel(cur);
+        haptic("success");
+        playAchievementSound();
+      }
+      prev = cur;
+    });
+
+    return () => {
+      clearTimeout(settleTimer);
+      unsub();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showLevel === null) return;
+    const t = setTimeout(() => setShowLevel(null), 3800);
+    return () => clearTimeout(t);
+  }, [showLevel]);
 
   return (
     <AnimatePresence>
@@ -96,7 +118,7 @@ export function LevelUpToast() {
               {showLevel}
             </div>
             <div className="display mt-3 text-xl text-foreground text-glow md:text-2xl">
-              {levelFromXP(xp).title}
+              {levelFromXP(useStore.getState().xp).title}
             </div>
             <div className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-secondary">
               тапни чтобы закрыть
