@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { User } from "lucide-react";
-import { daysSinceStart } from "@/lib/utils";
+import { daysSinceAccountStart } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { levelFromXP } from "@/lib/xp";
 import { CountUp } from "@/components/CountUp";
@@ -12,6 +12,7 @@ import { UserMenu } from "@/components/UserMenu";
 export function MobileTopBar() {
   const [now, setNow] = useState<Date | null>(null);
   const xp = useStore((s) => s.xp);
+  const accountStartDate = useStore((s) => s.accountStartDate);
   const lvl = levelFromXP(xp);
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export function MobileTopBar() {
           <CountUp value={xp} duration={500} /> XP
         </span>
         <span className="num text-[10px] text-secondary">
-          {now ? `D${daysSinceStart(now)}` : ""}
+          {now ? `D${daysSinceAccountStart(accountStartDate, now)}` : ""}
         </span>
         <UserMenu
           trigger={

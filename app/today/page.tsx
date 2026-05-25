@@ -9,7 +9,7 @@ import { MainTaskCard } from "@/components/MainTaskCard";
 import { DailyChest } from "@/components/DailyChest";
 import { DailyQuests } from "@/components/DailyQuests";
 import { StreakDangerBanner } from "@/components/StreakDangerBanner";
-import { daysSinceStart } from "@/lib/utils";
+import { daysSinceAccountStart } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -23,6 +23,7 @@ function greeting(hour: number): string {
 export default function TodayPage() {
   const [now, setNow] = useState<Date | null>(null);
   const tasks = useStore((s) => s.tasks);
+  const accountStartDate = useStore((s) => s.accountStartDate);
 
   useEffect(() => {
     setNow(new Date());
@@ -51,7 +52,7 @@ export default function TodayPage() {
         </div>
         <div className="shrink-0 text-right font-mono text-[10px] uppercase tracking-wider text-muted">
           <div className="num">
-            день <span className="text-accent-bright">{now ? daysSinceStart(now) : 0}</span> / 365
+            день <span className="text-accent-bright">{now ? daysSinceAccountStart(accountStartDate, now) : 0}</span> / 365
           </div>
           <div className="num mt-1">
             <span className="text-foreground">{doneToday}</span> закрыто

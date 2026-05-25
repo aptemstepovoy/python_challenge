@@ -15,6 +15,18 @@ export function daysSinceStart(today: Date = new Date()): number {
   return differenceInCalendarDays(today, parseISO(PLAN_START)) + 1;
 }
 
+/**
+ * Per-account day counter. Returns 1 on the day the account was created,
+ * 2 the next day, etc. Falls back to PLAN_START for legacy local-only mode.
+ */
+export function daysSinceAccountStart(
+  accountStartDate: string | null,
+  today: Date = new Date()
+): number {
+  const start = accountStartDate ?? PLAN_START;
+  return Math.max(1, differenceInCalendarDays(today, parseISO(start)) + 1);
+}
+
 export function formatDateRu(date: string | Date): string {
   const d = typeof date === "string" ? parseISO(date) : date;
   return format(d, "d MMM yyyy", { locale: ru });

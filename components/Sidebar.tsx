@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { cn, daysSinceStart, formatWeekday } from "@/lib/utils";
+import { cn, daysSinceAccountStart, formatWeekday } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { levelFromXP, progressWithinLevel } from "@/lib/xp";
 import { CountUp } from "@/components/CountUp";
@@ -30,6 +30,7 @@ export function Sidebar() {
   const [now, setNow] = useState<Date | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const xp = useStore((s) => s.xp);
+  const accountStartDate = useStore((s) => s.accountStartDate);
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
 
@@ -106,7 +107,7 @@ export function Sidebar() {
               {formatWeekday(now)}
             </div>
             <div className="mt-1 num text-foreground">
-              День {daysSinceStart(now)} / 365
+              День {daysSinceAccountStart(accountStartDate, now)} / 365
             </div>
           </div>
         ) : (

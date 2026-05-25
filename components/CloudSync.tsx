@@ -23,6 +23,22 @@ const PERSIST_KEYS = [
   "insights",
   "activeTimerTaskId",
   "activeTimerStartedAt",
+  "dailyXPGoal",
+  "dailyXPHistory",
+  "lastChestOpened",
+  "chestStreak",
+  "totalChestsOpened",
+  "chestHistory",
+  "dailyQuests",
+  "streakFreezes",
+  "streakFreezesEarned",
+  "talentPoints",
+  "talentPointsEarned",
+  "talents",
+  "inventory",
+  "recentDrops",
+  "lastLevelClaimed",
+  "accountStartDate",
 ] as const;
 
 function snapshot(state: ReturnType<typeof useStore.getState>) {
@@ -61,7 +77,6 @@ export function CloudSync() {
         .maybeSingle();
 
       if (error) {
-        // table missing or RLS issue — silently skip; local mode continues
         loadedRef.current = true;
         return;
       }
@@ -77,7 +92,11 @@ export function CloudSync() {
           /* ignore */
         }
       } else {
-        // no cloud record yet → push current local as initial cloud state
+        // No cloud record → brand-new account. Wipe any leftover local
+        // state from a previous session before seeding the cloud row,
+        // otherwise a deleted-and-recreated user inherits old XP/tasks.
+        useStore.getState().resetData();
+        useStore.setState({ accountStartDate: new Date().toISOString().slice(0, 10) });
         const payload = snapshot(useStore.getState());
         await sb
           .from("user_state")
@@ -112,6 +131,9 @@ export function CloudSync() {
     const { data: authSub } = sb.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         loadedRef.current = false;
+        // Clear local Zustand state so the next user (or re-registered
+        // user) starts clean instead of inheriting persisted XP/tasks.
+        useStore.getState().resetData();
         router.push("/login");
       }
     });

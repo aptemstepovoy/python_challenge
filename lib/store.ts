@@ -71,6 +71,7 @@ type State = {
   inventory: InventoryEntry[];
   recentDrops: DropEvent[];
   lastLevelClaimed: number;
+  accountStartDate: string | null;
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -230,6 +231,7 @@ export const useStore = create<State>()(
       inventory: [],
       recentDrops: [],
       lastLevelClaimed: 1,
+      accountStartDate: new Date().toISOString().slice(0, 10),
 
       setKGI: (id, current_value) =>
         set((s) => ({
@@ -846,11 +848,12 @@ export const useStore = create<State>()(
           inventory: [],
           recentDrops: [],
           lastLevelClaimed: 1,
+          accountStartDate: new Date().toISOString().slice(0, 10),
         }),
     }),
     {
-      name: "operator-store-v8",
-      version: 8,
+      name: "operator-store-v9",
+      version: 9,
     }
   )
 );
