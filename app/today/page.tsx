@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { CharacterCard } from "@/components/CharacterCard";
 import { TodaySummary } from "@/components/TodaySummary";
 import { TodayCombined } from "@/components/TodayCombined";
+import { NowCard } from "@/components/NowCard";
 import { TodayTasksCard } from "@/components/TodayTasksCard";
 import { DailyChest } from "@/components/DailyChest";
 import { DailyQuests } from "@/components/DailyQuests";
 import { StreakDangerBanner } from "@/components/StreakDangerBanner";
+import { RecoveryBanner } from "@/components/RecoveryBanner";
+import { EffortsToday } from "@/components/EffortsToday";
+import { MorningRitual } from "@/components/MorningRitual";
 import { daysSinceAccountStart } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -24,6 +28,8 @@ export default function TodayPage() {
   const [now, setNow] = useState<Date | null>(null);
   const tasks = useStore((s) => s.tasks);
   const accountStartDate = useStore((s) => s.accountStartDate);
+  const dailyPlans = useStore((s) => s.dailyPlans);
+  const [manualRitualOpen, setManualRitualOpen] = useState(false);
 
   useEffect(() => {
     setNow(new Date());
@@ -31,13 +37,33 @@ export default function TodayPage() {
     return () => clearInterval(t);
   }, []);
 
-  const doneToday = tasks.filter(
-    (t) =>
-      t.status === "done" &&
-      t.completed_at &&
-      t.completed_at.slice(0, 10) ===
-        (now?.toISOString().slice(0, 10) ?? "")
-  ).length;
+  const todayISO = now?.toISOString().slice(0, 10) ?? "";
+  const plan = dailyPlans.find((p) => p.date === todayISO);
+
+  const doneToday = useMemo(
+    () =>
+      tasks.filter(
+        (t) =>
+          t.status === "done" &&
+          t.completed_at &&
+          t.completed_at.slice(0, 10) === todayISO
+      ).length,
+    [tasks, todayISO]
+  );
+
+  const committed = useMemo(
+    () =>
+      tasks.filter(
+        (t) => t.is_today_committed && t.status !== "done"
+      ),
+    [tasks]
+  );
+
+  const subline = !now
+    ? ""
+    : plan
+    ? `${committed.length} взято · ${doneToday} закрыто`
+    : "Не выбрал задачи — открой утренний ритуал →";
 
   return (
     <div className="p-3 space-y-4 md:p-6 md:space-y-5">
@@ -49,10 +75,30 @@ export default function TodayPage() {
           <h1 className="display mt-0.5 text-2xl text-foreground text-glow md:text-3xl">
             {now ? greeting(now.getHours()) : "—"}
           </h1>
+          {now && !plan && (
+            <button
+              onClick={() => setManualRitualOpen(true)}
+              className="mt-1 text-xs text-secondary hover:text-accent-bright text-left"
+            >
+              {subline}
+            </button>
+          )}
+          {now && plan && (
+            <div className="mt-0.5 text-xs text-secondary">{subline}</div>
+          )}
+          {plan?.intent && (
+            <div className="mt-1 text-sm text-accent-bright">
+              ◆ {plan.intent}
+            </div>
+          )}
         </div>
         <div className="shrink-0 text-right font-mono text-[10px] uppercase tracking-wider text-muted">
           <div className="num">
-            день <span className="text-accent-bright">{now ? daysSinceAccountStart(accountStartDate, now) : 0}</span> / 365
+            день{" "}
+            <span className="text-accent-bright">
+              {now ? daysSinceAccountStart(accountStartDate, now) : 0}
+            </span>{" "}
+            / 365
           </div>
           <div className="num mt-1">
             <span className="text-foreground">{doneToday}</span> закрыто
@@ -61,22 +107,30 @@ export default function TodayPage() {
       </header>
 
       <StreakDangerBanner />
+      <RecoveryBanner />
 
-      {/* Hero — character + rings */}
-      <div className="h-[420px] md:h-[480px]">
-        <CharacterCard />
-      </div>
-
-      <DailyChest />
+      <NowCard />
 
       <TodayTasksCard />
+
+      <DailyChest />
+      <DailyQuests />
+
+      <div className="h-[280px]">
+        <CharacterCard />
+      </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
         <TodaySummary />
         <TodayCombined />
       </div>
 
-      <DailyQuests />
+      <EffortsToday />
+
+      <MorningRitual
+        open={manualRitualOpen}
+        onOpenChange={setManualRitualOpen}
+      />
     </div>
   );
 }

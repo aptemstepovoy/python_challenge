@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
 import { haptic } from "@/lib/haptics";
-import type { Task } from "@/lib/types";
+import { suggestEstimateDays } from "@/lib/today-logic";
+import type { EnergyLevel, Task } from "@/lib/types";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const inDaysISO = (d: number) => {
@@ -40,6 +41,7 @@ export function TaskFormDialog({
   defaultStepId?: string;
 }) {
   const steps = useStore((s) => s.steps);
+  const tasks = useStore((s) => s.tasks);
   const addTask = useStore((s) => s.addTask);
   const updateTask = useStore((s) => s.updateTask);
 
@@ -50,7 +52,14 @@ export function TaskFormDialog({
   const [result, setResult] = useState("");
   const [xp, setXp] = useState("25");
   const [linkedBoss, setLinkedBoss] = useState<string>("none");
+  const [estimatedDays, setEstimatedDays] = useState("1");
+  const [energy, setEnergy] = useState<EnergyLevel | "none">("none");
   const [err, setErr] = useState<string | null>(null);
+
+  const suggestion = useMemo(
+    () => (stepId ? suggestEstimateDays(stepId, tasks) : 1),
+    [stepId, tasks]
+  );
 
   useEffect(() => {
     if (task) {
@@ -61,6 +70,8 @@ export function TaskFormDialog({
       setResult(task.result_definition ?? "");
       setXp(String(task.xp ?? 25));
       setLinkedBoss(task.linked_boss ?? "none");
+      setEstimatedDays(String(task.estimated_days ?? 1));
+      setEnergy(task.energy ?? "none");
     } else {
       setTitle("");
       setStepId(defaultStepId ?? steps[0]?.id ?? "S1");
@@ -69,6 +80,8 @@ export function TaskFormDialog({
       setResult("");
       setXp("25");
       setLinkedBoss("none");
+      setEstimatedDays("1");
+      setEnergy("none");
     }
     setErr(null);
   }, [task, open, defaultStepId, steps]);
@@ -87,7 +100,9 @@ export function TaskFormDialog({
       return;
     }
     const xpNum = Math.max(0, Number(xp) || 25);
+    const daysNum = Math.max(1, Math.min(365, Number(estimatedDays) || 1));
     const boss = linkedBoss === "none" ? undefined : linkedBoss;
+    const en = energy === "none" ? undefined : energy;
     haptic("success");
     if (task) {
       updateTask(task.id, {
@@ -98,6 +113,10 @@ export function TaskFormDialog({
         result_definition: result,
         xp: xpNum,
         linked_boss: boss,
+        estimated_days: daysNum,
+        energy: en,
+        // Graduating an Inbox task → promote it to todo on save.
+        ...(task.status === "inbox" ? { status: "todo" as const } : {}),
       });
     } else {
       addTask({
@@ -109,6 +128,8 @@ export function TaskFormDialog({
         result_definition: result,
         xp: xpNum,
         linked_boss: boss,
+        estimated_days: daysNum,
+        energy: en,
       });
     }
     onOpenChange(false);
@@ -168,6 +189,50 @@ export function TaskFormDialog({
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Дней на задачу *</Label>
+              <Input
+                type="number"
+                min={1}
+                max={365}
+                value={estimatedDays}
+                onChange={(e) => setEstimatedDays(e.target.value)}
+              />
+              {suggestion > 1 && Number(estimatedDays) !== suggestion && (
+                <button
+                  type="button"
+                  onClick={() => setEstimatedDays(String(suggestion))}
+                  className="text-[10px] text-accent-bright hover:text-pink-bright text-left"
+                >
+                  ~ Похожие занимали {suggestion} дн., взять?
+                </button>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Энергия</Label>
+              <Select
+                value={energy}
+                onValueChange={(v) => setEnergy(v as EnergyLevel | "none")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="—" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Не указано</SelectItem>
+                  <SelectItem value="low">Low (рутина)</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High (глубокая)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-secondary leading-snug">
+            Появится в «Сегодня» за {estimatedDays || 1} дн. до дедлайна,
+            если её не положить на стол раньше.
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

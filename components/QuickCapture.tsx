@@ -20,11 +20,54 @@ import {
   Zap,
   ListPlus,
   Lightbulb,
+  Inbox,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { haptic } from "@/lib/haptics";
+import { Input as InputControl } from "@/components/ui/input";
 
-type Mode = "menu" | "weight" | "task";
+type Mode = "menu" | "weight" | "task" | "inbox";
+
+function InboxForm({ onDone }: { onDone: () => void }) {
+  const addTask = useStore((s) => s.addTask);
+  const [title, setTitle] = useState("");
+
+  const save = () => {
+    const t = title.trim();
+    if (!t) return;
+    haptic("success");
+    const today = new Date().toISOString().slice(0, 10);
+    addTask({
+      title: t,
+      step_id: "S1",
+      start_date: today,
+      deadline: today,
+      status: "inbox",
+      result_definition: "",
+      xp: 25,
+      estimated_days: 1,
+    });
+    onDone();
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="font-mono text-xs uppercase tracking-wider text-secondary">
+        Кинь мысль, разберёшь потом
+      </div>
+      <InputControl
+        autoFocus
+        placeholder="что-то важное, что нельзя забыть"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && save()}
+      />
+      <Button onClick={save} className="w-full" disabled={!title.trim()}>
+        В Inbox
+      </Button>
+    </div>
+  );
+}
 
 function WeightForm({ onDone }: { onDone: () => void }) {
   const addWeightEntry = useStore((s) => s.addWeightEntry);
@@ -134,6 +177,12 @@ function Menu({
 }) {
   const items = [
     {
+      icon: Inbox,
+      label: "Кинуть в Inbox",
+      sub: "Мысль на потом, без классификации",
+      action: () => setMode("inbox"),
+    },
+    {
       icon: Lightbulb,
       label: "Записать инсайт",
       sub: "Текстом или голосом, +10 XP",
@@ -234,7 +283,9 @@ export function QuickCapture() {
                 ? "Быстрое действие"
                 : mode === "weight"
                   ? "Лог веса"
-                  : "Отметить задачу"}
+                  : mode === "inbox"
+                    ? "Inbox"
+                    : "Отметить задачу"}
             </DialogTitle>
           </DialogHeader>
           {mode === "menu" && (
@@ -250,6 +301,9 @@ export function QuickCapture() {
           )}
           {mode === "task" && (
             <TaskQuickList onDone={() => handleOpenChange(false)} />
+          )}
+          {mode === "inbox" && (
+            <InboxForm onDone={() => handleOpenChange(false)} />
           )}
           {mode !== "menu" && (
             <button

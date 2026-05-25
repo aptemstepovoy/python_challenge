@@ -23,13 +23,14 @@ import {
 } from "date-fns";
 import { ru } from "date-fns/locale";
 import type { Task } from "@/lib/types";
-import { Plus, Search, X, Check, Undo2 } from "lucide-react";
+import { Plus, Search, X, Check, Undo2, Inbox } from "lucide-react";
 
-type Tab = "active" | "by_step" | "done";
+type Tab = "active" | "by_step" | "inbox" | "done";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "active", label: "Активные" },
   { key: "by_step", label: "По шагам" },
+  { key: "inbox", label: "Inbox" },
   { key: "done", label: "Выполненные" },
 ];
 
@@ -235,6 +236,19 @@ export default function TasksPage() {
     return Array.from(map.entries());
   }, [doneTasks]);
 
+  const inboxTasks = useMemo(
+    () =>
+      searchFiltered
+        .filter((t) => t.status === "inbox")
+        .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? "")),
+    [searchFiltered]
+  );
+
+  const [graduateId, setGraduateId] = useState<string | null>(null);
+  const graduateTask = inboxTasks.find((t) => t.id === graduateId) ?? null;
+  const moveToInbox = useStore((s) => s.moveTaskToInbox);
+  const deleteTask = useStore((s) => s.deleteTask);
+
   return (
     <div className="p-4 space-y-6 md:p-10 md:space-y-8">
       <header className="flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between md:pb-6">
@@ -289,6 +303,9 @@ export default function TasksPage() {
               <span className="ml-1.5 num">
                 {buckets.totalOpen}
               </span>
+            )}
+            {t.key === "inbox" && inboxTasks.length > 0 && (
+              <span className="ml-1.5 num">{inboxTasks.length}</span>
             )}
             {t.key === "done" && (
               <span className="ml-1.5 num">{doneTasks.length}</span>
@@ -409,8 +426,52 @@ export default function TasksPage() {
       {tab === "by_step" && (
         <StepAccordionList
           steps={steps}
-          tasks={searchFiltered.filter((t) => t.status !== "done")}
+          tasks={searchFiltered.filter(
+            (t) => t.status !== "done" && t.status !== "inbox"
+          )}
         />
+      )}
+
+      {tab === "inbox" && (
+        <div>
+          {inboxTasks.length === 0 ? (
+            <div className="panel corners rounded-md p-6 text-center">
+              <div className="display text-xl text-accent-bright">
+                Inbox пуст
+              </div>
+              <p className="mt-2 text-base text-secondary">
+                Скинь сюда мысль через Quick Capture (+).
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {inboxTasks.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5"
+                >
+                  <Inbox className="h-4 w-4 shrink-0 text-secondary" />
+                  <span className="flex-1 min-w-0 truncate text-sm text-foreground">
+                    {t.title}
+                  </span>
+                  <button
+                    onClick={() => setGraduateId(t.id)}
+                    className="shrink-0 rounded-md border border-accent bg-accent/20 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-accent-bright hover:bg-accent/30"
+                  >
+                    В план
+                  </button>
+                  <button
+                    onClick={() => deleteTask(t.id)}
+                    className="shrink-0 text-secondary hover:text-danger-bright"
+                    aria-label="Удалить"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {tab === "done" && (
@@ -451,6 +512,11 @@ export default function TasksPage() {
       )}
 
       <TaskFormDialog open={addOpen} onOpenChange={setAddOpen} />
+      <TaskFormDialog
+        open={!!graduateTask}
+        onOpenChange={(o) => !o && setGraduateId(null)}
+        task={graduateTask}
+      />
     </div>
   );
 }

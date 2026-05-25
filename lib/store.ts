@@ -7,9 +7,13 @@ import type {
   AchievementSnapshot,
   ChestReward,
   DailyJournal,
+  DailyPlan,
   DailyQuestsSnapshot,
   DailyXPEntry,
   DropEvent,
+  Effort,
+  EffortLog,
+  EnergyLevel,
   Habit,
   HabitLog,
   Insight,
@@ -25,6 +29,7 @@ import type {
   WeightEntry,
 } from "./types";
 import {
+  initialEfforts,
   initialHabits,
   initialKGIs,
   initialSteps,
@@ -72,6 +77,15 @@ type State = {
   recentDrops: DropEvent[];
   lastLevelClaimed: number;
   accountStartDate: string | null;
+  // v7 — focus / ritual / efforts / inbox
+  dailyPlans: DailyPlan[];
+  efforts: Effort[];
+  effortLogs: EffortLog[];
+  dailyCapacityHours: number;
+  preferredEnergyMorning: EnergyLevel;
+  preferredEnergyAfternoon: EnergyLevel;
+  preferredEnergyEvening: EnergyLevel;
+  inboxTasks: string[];
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -117,10 +131,25 @@ type State = {
   awardItem: (itemId: ItemId) => void;
   claimLevelRewards: () => void;
 
+  commitTasksForToday: (
+    taskIds: string[],
+    mood?: EnergyLevel,
+    intent?: string
+  ) => void;
+  uncommitTask: (taskId: string) => void;
+  finalizeDay: (reflection?: string) => void;
+  logEffort: (effortId: string, date?: string) => void;
+  unlogEffort: (logId: string) => void;
+  addEffort: (e: Omit<Effort, "id" | "created_at" | "archived">) => void;
+  moveTaskToInbox: (taskId: string) => void;
+  graduateFromInbox: (taskId: string, patch: Partial<Task>) => void;
+  setDailyCapacity: (hours: number) => void;
+
   resetData: () => void;
 };
 
 const STATUS_CYCLE: Record<Status, Status> = {
+  inbox: "todo",
   todo: "in_progress",
   in_progress: "done",
   done: "todo",
@@ -233,6 +262,15 @@ export const useStore = create<State>()(
       lastLevelClaimed: 1,
       accountStartDate: new Date().toISOString().slice(0, 10),
 
+      dailyPlans: [],
+      efforts: initialEfforts,
+      effortLogs: [],
+      dailyCapacityHours: 4,
+      preferredEnergyMorning: "high",
+      preferredEnergyAfternoon: "medium",
+      preferredEnergyEvening: "low",
+      inboxTasks: [],
+
       setKGI: (id, current_value) =>
         set((s) => ({
           kgis: s.kgis.map((k) =>
@@ -287,6 +325,8 @@ export const useStore = create<State>()(
                 next === "in_progress" && !t.started_at
                   ? nowISO()
                   : t.started_at,
+              is_today_committed:
+                next === "done" ? false : t.is_today_committed,
             };
           });
           const loot = rolledLoot
@@ -360,6 +400,7 @@ export const useStore = create<State>()(
               status: "done" as Status,
               completed_at: nowISO(),
               snoozed_until: undefined,
+              is_today_committed: false,
             };
           });
           const loot = rolledLoot
@@ -815,6 +856,147 @@ export const useStore = create<State>()(
         });
       },
 
+      commitTasksForToday: (taskIds, mood, intent) =>
+        set((s) => {
+          const today = todayISO();
+          const ts = nowISO();
+          const limit = 3;
+          const ids = taskIds.slice(0, limit);
+          const plan: DailyPlan = {
+            date: today,
+            committed_task_ids: ids,
+            mood,
+            intent,
+            created_at: ts,
+          };
+          const reward = 5 * ids.length;
+          return {
+            dailyPlans: [
+              plan,
+              ...s.dailyPlans.filter((p) => p.date !== today),
+            ].slice(0, 60),
+            tasks: s.tasks.map((t) => {
+              if (ids.includes(t.id)) {
+                return { ...t, is_today_committed: true, committed_at: ts };
+              }
+              if (t.is_today_committed && !ids.includes(t.id)) {
+                return { ...t, is_today_committed: false };
+              }
+              return t;
+            }),
+            xp: s.xp + reward,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
+          };
+        }),
+
+      uncommitTask: (taskId) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? { ...t, is_today_committed: false } : t
+          ),
+          dailyPlans: s.dailyPlans.map((p) => {
+            if (p.date !== todayISO()) return p;
+            return {
+              ...p,
+              committed_task_ids: p.committed_task_ids.filter(
+                (id) => id !== taskId
+              ),
+            };
+          }),
+        })),
+
+      finalizeDay: (reflection) =>
+        set((s) => {
+          const today = todayISO();
+          const existing = s.dailyPlans.find((p) => p.date === today);
+          const reward = 20;
+          if (!existing) {
+            // No morning ritual was done — create a minimal record so the
+            // evening reflection still has a home.
+            const ts = nowISO();
+            return {
+              dailyPlans: [
+                {
+                  date: today,
+                  committed_task_ids: [],
+                  created_at: ts,
+                  finalized_at: ts,
+                  reflection,
+                },
+                ...s.dailyPlans,
+              ].slice(0, 60),
+              xp: s.xp + reward,
+              dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
+            };
+          }
+          return {
+            dailyPlans: s.dailyPlans.map((p) =>
+              p.date === today
+                ? { ...p, reflection, finalized_at: nowISO() }
+                : p
+            ),
+            xp: s.xp + reward,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
+          };
+        }),
+
+      logEffort: (effortId, date) =>
+        set((s) => {
+          const ef = s.efforts.find((e) => e.id === effortId);
+          if (!ef) return {};
+          const reward = ef.xp_per_unit;
+          return {
+            effortLogs: [
+              ...s.effortLogs,
+              {
+                id: uuid(),
+                effort_id: effortId,
+                date: date ?? todayISO(),
+                completed_at: nowISO(),
+              },
+            ],
+            xp: s.xp + reward,
+            dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
+          };
+        }),
+
+      unlogEffort: (logId) =>
+        set((s) => ({
+          effortLogs: s.effortLogs.filter((l) => l.id !== logId),
+        })),
+
+      addEffort: (e) =>
+        set((s) => ({
+          efforts: [
+            ...s.efforts,
+            {
+              ...e,
+              id: `ef_${uuid().slice(0, 6)}`,
+              created_at: todayISO(),
+              archived: false,
+            },
+          ],
+        })),
+
+      moveTaskToInbox: (taskId) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? { ...t, status: "inbox" } : t
+          ),
+        })),
+
+      graduateFromInbox: (taskId, patch) =>
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === taskId
+              ? { ...t, ...patch, status: patch.status ?? "todo" }
+              : t
+          ),
+        })),
+
+      setDailyCapacity: (hours) =>
+        set({ dailyCapacityHours: Math.max(1, Math.min(16, Math.round(hours))) }),
+
       resetData: () =>
         set({
           kgis: initialKGIs,
@@ -849,11 +1031,48 @@ export const useStore = create<State>()(
           recentDrops: [],
           lastLevelClaimed: 1,
           accountStartDate: new Date().toISOString().slice(0, 10),
+          dailyPlans: [],
+          efforts: initialEfforts,
+          effortLogs: [],
+          dailyCapacityHours: 4,
+          preferredEnergyMorning: "high",
+          preferredEnergyAfternoon: "medium",
+          preferredEnergyEvening: "low",
+          inboxTasks: [],
         }),
     }),
     {
-      name: "operator-store-v9",
-      version: 9,
+      name: "operator-store-v10",
+      version: 10,
+      migrate: (persisted: unknown, _version: number) => {
+        // Backfill v10 fields on existing v9 payloads so logging in on
+        // an older client doesn't crash with undefined arrays / null
+        // estimated_days.
+        if (!persisted || typeof persisted !== "object") return persisted;
+        const state = persisted as Record<string, unknown>;
+        const inferDays = (t: Task) => {
+          if ((t.xp ?? 25) >= 75) return 7;
+          if ((t.xp ?? 25) >= 50) return 3;
+          return 1;
+        };
+        if (Array.isArray(state.tasks)) {
+          state.tasks = (state.tasks as Task[]).map((t) =>
+            t.estimated_days ? t : { ...t, estimated_days: inferDays(t) }
+          );
+        }
+        if (!state.dailyPlans) state.dailyPlans = [];
+        if (!state.efforts) state.efforts = initialEfforts;
+        if (!state.effortLogs) state.effortLogs = [];
+        if (!state.dailyCapacityHours) state.dailyCapacityHours = 4;
+        if (!state.preferredEnergyMorning)
+          state.preferredEnergyMorning = "high";
+        if (!state.preferredEnergyAfternoon)
+          state.preferredEnergyAfternoon = "medium";
+        if (!state.preferredEnergyEvening)
+          state.preferredEnergyEvening = "low";
+        if (!state.inboxTasks) state.inboxTasks = [];
+        return state;
+      },
     }
   )
 );

@@ -26,6 +26,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { Status, Task } from "@/lib/types";
 
 const STATUS_LABEL: Record<Status, string> = {
+  inbox: "Inbox",
   todo: "В ожидании",
   in_progress: "В работе",
   done: "Сделано",
@@ -33,6 +34,7 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 const STATUS_TONE: Record<Status, "neutral" | "accent" | "ok" | "danger"> = {
+  inbox: "neutral",
   todo: "neutral",
   in_progress: "accent",
   done: "ok",

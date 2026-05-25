@@ -1,4 +1,8 @@
-export type Status = "todo" | "in_progress" | "done" | "blocked";
+export type Status = "inbox" | "todo" | "in_progress" | "done" | "blocked";
+
+export type EnergyLevel = "low" | "medium" | "high";
+
+export type PlannedSlot = "morning" | "afternoon" | "evening";
 
 export type KGI = {
   id: string;
@@ -34,6 +38,43 @@ export type Task = {
   started_at?: string;
   completed_at?: string;
   time_spent_sec?: number;
+  estimated_days?: number;
+  energy?: EnergyLevel;
+  is_today_committed?: boolean;
+  committed_at?: string;
+  planned_slot?: PlannedSlot;
+};
+
+export type DailyPlan = {
+  date: string;
+  committed_task_ids: string[];
+  mood?: EnergyLevel;
+  intent?: string;
+  created_at: string;
+  finalized_at?: string;
+  reflection?: string;
+};
+
+export type Effort = {
+  id: string;
+  title: string;
+  step_id: string;
+  start_date: string;
+  end_date: string;
+  cadence: "daily" | "weekly_n";
+  target_per_week?: number;
+  linked_boss?: string;
+  xp_per_unit: number;
+  archived: boolean;
+  created_at: string;
+};
+
+export type EffortLog = {
+  id: string;
+  effort_id: string;
+  date: string;
+  completed_at: string;
+  note?: string;
 };
 
 export type WeeklyReview = {
@@ -258,7 +299,11 @@ export type AchievementId =
   | "english_b2"
   | "first_review"
   | "first_habit"
-  | "marathon_30";
+  | "marathon_30"
+  | "clean_inbox"
+  | "committed_3_days"
+  | "recovery_done"
+  | "planned_week";
 
 export type AchievementSnapshot = {
   id: AchievementId;

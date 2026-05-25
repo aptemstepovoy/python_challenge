@@ -9,93 +9,63 @@ import {
   ListPlus,
   Play,
   Sparkles,
-  Clock,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { pickTodayTasks, snoozesLeft } from "@/lib/today-logic";
+import {
+  pickHorizonTasks,
+  pickTodayTasks,
+  slackDays,
+  snoozesLeft,
+} from "@/lib/today-logic";
 import { haptic } from "@/lib/haptics";
-import { cn, formatDateRu } from "@/lib/utils";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 
-function classify(task: Task, today: Date) {
-  const todayISO = today.toISOString().slice(0, 10);
-  if (task.deadline < todayISO) {
-    const days = differenceInCalendarDays(today, parseISO(task.deadline));
-    return {
-      kind: "overdue" as const,
-      label: `Просрочено · ${days} дн.`,
-      tone: "danger" as const,
-    };
-  }
-  if (task.deadline === todayISO) {
-    return {
-      kind: "due" as const,
-      label: "Дедлайн сегодня",
-      tone: "warn" as const,
-    };
-  }
-  const days = differenceInCalendarDays(parseISO(task.deadline), today);
-  return {
-    kind: "future" as const,
-    label: `до ${formatDateRu(task.deadline)} · ${days} дн.`,
-    tone: "accent" as const,
-  };
-}
-
-function TaskRow({ task }: { task: Task }) {
+function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
   const today = useMemo(() => new Date(), []);
   const startTask = useStore((s) => s.startTask);
   const completeTask = useStore((s) => s.completeTask);
   const startTimer = useStore((s) => s.startTimer);
   const stopTimer = useStore((s) => s.stopTimer);
   const snoozeTask = useStore((s) => s.snoozeTask);
+  const uncommitTask = useStore((s) => s.uncommitTask);
   const snoozesUsedDate = useStore((s) => s.snoozesUsedDate);
   const snoozesUsedCount = useStore((s) => s.snoozesUsedCount);
 
   const [expanded, setExpanded] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const cat = classify(task, today);
+  const slack = slackDays(task, today);
   const started = task.status === "in_progress";
+  const overdue = slack < 0;
   const snoozeBudget = snoozesLeft(snoozesUsedDate, snoozesUsedCount, today);
 
-  const onStart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    haptic("tap");
-    startTask(task.id);
-    startTimer(task.id);
-  };
-  const onDone = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    haptic("success");
-    stopTimer();
-    setBusy(true);
-    completeTask(task.id);
-  };
-  const onSnooze = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (snoozeBudget <= 0) return;
-    haptic("warn");
-    snoozeTask(task.id);
-  };
+  const borderTone = overdue
+    ? "border-danger/60 bg-danger/5"
+    : committed
+    ? "border-accent/60 bg-accent/10"
+    : started
+    ? "border-accent/40 bg-accent/5"
+    : "border-border bg-surface";
 
-  const borderTone =
-    cat.kind === "overdue"
-      ? "border-danger/60 bg-danger/5"
-      : started
-      ? "border-accent/60 bg-accent/5"
-      : cat.kind === "due"
-      ? "border-warn/40 bg-warn/5"
-      : "border-border bg-surface";
+  const slackLabel = overdue
+    ? `Опаздываешь ${-slack} дн.`
+    : slack === 0
+    ? "Старт сегодня"
+    : `${slack} дн. запас`;
+  const slackTone = overdue
+    ? "text-danger-bright"
+    : slack === 0
+    ? "text-warn"
+    : "text-secondary";
 
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: busy ? 0 : 1, y: 0 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.18 }}
       className={cn(
         "rounded-md border transition-colors overflow-hidden",
         borderTone
@@ -113,9 +83,7 @@ function TaskRow({ task }: { task: Task }) {
           <span
             className={cn(
               "block text-sm truncate",
-              cat.kind === "overdue"
-                ? "text-danger-bright"
-                : "text-foreground"
+              overdue ? "text-danger-bright" : "text-foreground"
             )}
           >
             {task.title}
@@ -123,21 +91,14 @@ function TaskRow({ task }: { task: Task }) {
           <span
             className={cn(
               "flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider mt-0.5",
-              cat.kind === "overdue"
-                ? "text-danger-bright"
-                : cat.kind === "due"
-                ? "text-warn"
-                : "text-secondary"
+              slackTone
             )}
           >
-            {cat.kind === "overdue" && (
+            {overdue && (
               <AlertTriangle className="h-3 w-3" strokeWidth={2.5} />
             )}
-            {cat.kind === "due" && <Clock className="h-3 w-3" />}
-            {cat.label}
-            <span className="text-accent-bright">
-              · +{task.xp ?? 25} XP
-            </span>
+            {slackLabel}
+            <span className="text-accent-bright">· +{task.xp ?? 25}</span>
             {started && <span className="text-ok">· в работе</span>}
           </span>
         </span>
@@ -165,7 +126,14 @@ function TaskRow({ task }: { task: Task }) {
               )}
               <div className="flex flex-col gap-1.5 sm:flex-row">
                 <button
-                  onClick={onStart}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    haptic("tap");
+                    if (!started) {
+                      startTask(task.id);
+                      startTimer(task.id);
+                    }
+                  }}
                   disabled={started}
                   className={cn(
                     "flex-1 rounded-md border px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors",
@@ -178,24 +146,48 @@ function TaskRow({ task }: { task: Task }) {
                   {started ? "В работе" : "Начать"}
                 </button>
                 <button
-                  onClick={onDone}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    haptic("success");
+                    stopTimer();
+                    completeTask(task.id);
+                  }}
                   className="flex-1 rounded-md border border-accent bg-accent/20 px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider text-accent-bright hover:bg-accent/30 flex items-center justify-center gap-1.5"
                 >
                   <Check className="h-3 w-3" />
                   Сделано
                 </button>
-                <button
-                  onClick={onSnooze}
-                  disabled={snoozeBudget <= 0}
-                  className={cn(
-                    "rounded-md border px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors",
-                    snoozeBudget > 0
-                      ? "border-border bg-surface text-secondary hover:text-pink-bright hover:border-pink/40"
-                      : "border-border bg-surface text-muted cursor-not-allowed"
-                  )}
-                >
-                  Не сегодня ({snoozeBudget})
-                </button>
+                {committed ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      uncommitTask(task.id);
+                      haptic("tap");
+                    }}
+                    className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider text-secondary hover:text-danger-bright hover:border-danger/40"
+                    title="Снять с сегодня"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (snoozeBudget <= 0) return;
+                      haptic("warn");
+                      snoozeTask(task.id);
+                    }}
+                    disabled={snoozeBudget <= 0}
+                    className={cn(
+                      "rounded-md border px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors",
+                      snoozeBudget > 0
+                        ? "border-border bg-surface text-secondary hover:text-pink-bright hover:border-pink/40"
+                        : "border-border bg-surface text-muted cursor-not-allowed"
+                    )}
+                  >
+                    Не сегодня ({snoozeBudget})
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -205,22 +197,110 @@ function TaskRow({ task }: { task: Task }) {
   );
 }
 
+function Section({
+  title,
+  count,
+  tone,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  count: number;
+  tone: "danger" | "accent" | "muted";
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  if (count === 0) return null;
+  const toneClass =
+    tone === "danger"
+      ? "text-danger-bright"
+      : tone === "accent"
+      ? "text-accent-bright"
+      : "text-secondary";
+  return (
+    <div className="space-y-1.5">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2"
+      >
+        <span
+          className={cn(
+            "font-mono text-[10px] uppercase tracking-[0.18em]",
+            toneClass
+          )}
+        >
+          ◆ {title}
+        </span>
+        <span className={cn("num text-[10px]", toneClass)}>{count}</span>
+        <span className="flex-1" />
+        <ChevronRight
+          className={cn(
+            "h-3 w-3 text-secondary transition-transform",
+            open && "rotate-90"
+          )}
+        />
+      </button>
+      {open && <div className="space-y-1.5">{children}</div>}
+    </div>
+  );
+}
+
 export function TodayTasksCard() {
   const router = useRouter();
-  const tasks = useStore((s) => s.tasks);
+  const allTasks = useStore((s) => s.tasks);
   const today = useMemo(() => new Date(), []);
-  const list = useMemo(() => pickTodayTasks(tasks, today), [tasks, today]);
 
-  const overdue = list.filter((t) => {
-    const todayISO = today.toISOString().slice(0, 10);
-    return t.deadline < todayISO;
-  });
+  const committed = useMemo(
+    () =>
+      allTasks.filter(
+        (t) => t.is_today_committed && t.status !== "done" && t.status !== "inbox"
+      ),
+    [allTasks]
+  );
 
-  if (list.length === 0) {
+  const today_list = useMemo(() => pickTodayTasks(allTasks, today), [
+    allTasks,
+    today,
+  ]);
+
+  const overdueRest = useMemo(
+    () =>
+      today_list.filter(
+        (t) => slackDays(t, today) < 0 && !t.is_today_committed
+      ),
+    [today_list, today]
+  );
+
+  const startTodayRest = useMemo(
+    () =>
+      today_list.filter(
+        (t) => slackDays(t, today) >= 0 && !t.is_today_committed
+      ),
+    [today_list, today]
+  );
+
+  const horizon = useMemo(() => pickHorizonTasks(allTasks, today, 7), [
+    allTasks,
+    today,
+  ]);
+
+  const inProgressCount = useMemo(
+    () => allTasks.filter((t) => t.status === "in_progress").length,
+    [allTasks]
+  );
+
+  const empty =
+    committed.length === 0 &&
+    overdueRest.length === 0 &&
+    startTodayRest.length === 0 &&
+    horizon.length === 0;
+
+  if (empty) {
     return (
-      <div className="panel-bright corners rounded-md p-4 md:p-5 h-full flex flex-col items-center justify-center text-center gap-3">
-        <Sparkles className="h-6 w-6 text-accent-bright" />
-        <div className="display text-lg text-accent-bright leading-tight">
+      <div className="panel-bright corners rounded-md p-4 md:p-5 text-center space-y-3">
+        <Sparkles className="h-6 w-6 text-accent-bright mx-auto" />
+        <div className="display text-lg text-accent-bright">
           На сегодня задач нет
         </div>
         <p className="text-sm text-secondary px-2 leading-snug">
@@ -231,7 +311,7 @@ export function TodayTasksCard() {
             haptic("tap");
             router.push("/tasks");
           }}
-          className="rounded-md border border-accent bg-accent/20 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-accent-bright hover:bg-accent/30 flex items-center gap-1.5"
+          className="mx-auto rounded-md border border-accent bg-accent/20 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-accent-bright hover:bg-accent/30 flex items-center gap-1.5"
         >
           <ListPlus className="h-3 w-3" />
           Взять задачу
@@ -240,36 +320,93 @@ export function TodayTasksCard() {
     );
   }
 
+  const wipExceeded = inProgressCount > 3;
+
   return (
-    <div className="panel-bright corners rounded-md p-3 md:p-4 h-full flex flex-col">
-      <div className="mb-2.5 flex items-center justify-between">
-        <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-bright">
-          ◆ Задачи на сегодня
-        </div>
-        <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider">
-          {overdue.length > 0 && (
+    <div className="panel-bright corners rounded-md p-3 md:p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-wider">
+        <div className="flex flex-wrap items-center gap-2">
+          {overdueRest.length > 0 && (
             <span className="text-danger-bright num">
-              {overdue.length} просроч.
+              {overdueRest.length} просрочено
             </span>
           )}
-          <span className="text-secondary num">всего {list.length}</span>
+          <span className="text-secondary">·</span>
+          <span className="text-foreground num">
+            {committed.length}/3 на сегодня
+          </span>
+          <span className="text-secondary">·</span>
+          <span className="text-secondary num">
+            {horizon.length} на горизонте
+          </span>
         </div>
+        {wipExceeded && (
+          <span className="text-danger-bright num">
+            Активных {inProgressCount}/3 — заверши или останови
+          </span>
+        )}
       </div>
 
-      <div className="space-y-1.5 flex-1 overflow-y-auto">
-        <AnimatePresence>
-          {list.map((t) => (
-            <TaskRow key={t.id} task={t} />
-          ))}
-        </AnimatePresence>
-      </div>
+      <AnimatePresence>
+        {overdueRest.length > 0 && (
+          <Section
+            title="Просрочено"
+            tone="danger"
+            count={overdueRest.length}
+            defaultOpen
+          >
+            {overdueRest.map((t) => (
+              <TaskRow key={t.id} task={t} />
+            ))}
+          </Section>
+        )}
+
+        {committed.length > 0 && (
+          <Section
+            title="На сегодня"
+            tone="accent"
+            count={committed.length}
+            defaultOpen
+          >
+            {committed.map((t) => (
+              <TaskRow key={t.id} task={t} committed />
+            ))}
+          </Section>
+        )}
+
+        {startTodayRest.length > 0 && (
+          <Section
+            title="Стартует сегодня"
+            tone="accent"
+            count={startTodayRest.length}
+            defaultOpen
+          >
+            {startTodayRest.map((t) => (
+              <TaskRow key={t.id} task={t} />
+            ))}
+          </Section>
+        )}
+
+        {horizon.length > 0 && (
+          <Section
+            title="На горизонте · 7 дней"
+            tone="muted"
+            count={horizon.length}
+            defaultOpen={false}
+          >
+            {horizon.map((t) => (
+              <TaskRow key={t.id} task={t} />
+            ))}
+          </Section>
+        )}
+      </AnimatePresence>
 
       <button
         onClick={() => {
           haptic("tap");
           router.push("/tasks");
         }}
-        className="mt-2.5 w-full text-center font-mono text-[10px] uppercase tracking-wider text-secondary hover:text-accent-bright"
+        className="w-full text-center font-mono text-[10px] uppercase tracking-wider text-secondary hover:text-accent-bright"
       >
         Все задачи →
       </button>

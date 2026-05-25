@@ -11,6 +11,7 @@ import { LevelUpToast } from "@/components/LevelUpToast";
 import { LootToast } from "@/components/LootToast";
 import { LevelRewardsWatcher } from "@/components/LevelRewardsWatcher";
 import { StreakFreezeAutomation } from "@/components/StreakFreezeAutomation";
+import { RitualWatchers } from "@/components/RitualWatchers";
 
 function isAuthRoute(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -44,6 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <LevelUpToast />
       <LevelRewardsWatcher />
       <StreakFreezeAutomation />
+      <RitualWatchers />
       <FocusTimer />
       <IntroAnimation />
     </>

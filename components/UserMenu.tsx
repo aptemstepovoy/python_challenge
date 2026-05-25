@@ -21,6 +21,7 @@ import {
   HelpCircle,
   Sparkle,
   Package,
+  Moon,
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +34,7 @@ import { CountUp } from "@/components/CountUp";
 import { haptic } from "@/lib/haptics";
 import { TalentTree } from "@/components/TalentTree";
 import { Inventory } from "@/components/Inventory";
+import { EveningRitual } from "@/components/EveningRitual";
 
 function FreezeRow({ count }: { count: number }) {
   const [show, setShow] = useState(false);
@@ -104,6 +106,7 @@ export function UserMenu({
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
   const streakFreezes = useStore((s) => s.streakFreezes);
+  const [eveningOpen, setEveningOpen] = useState(false);
   const talentPoints = useStore((s) => s.talentPoints);
   const inventoryCount = useStore((s) => s.inventory.length);
   const [email, setEmail] = useState<string | null>(null);
@@ -289,6 +292,22 @@ export function UserMenu({
                 }
               />
 
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setTimeout(() => setEveningOpen(true), 200);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
+                  "text-foreground hover:bg-surface-2 hover:text-accent-bright"
+                )}
+              >
+                <span className="flex items-center gap-3">
+                  <Moon className="h-4 w-4 text-accent-bright/70" />
+                  Завершить день
+                </span>
+              </button>
+
               <div className="px-2 pt-1">
                 <FreezeRow count={streakFreezes} />
               </div>
@@ -310,6 +329,7 @@ export function UserMenu({
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
+      <EveningRitual open={eveningOpen} onOpenChange={setEveningOpen} />
     </DialogPrimitive.Root>
   );
 }

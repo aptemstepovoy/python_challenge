@@ -38,6 +38,7 @@ export default function AchievementsPage() {
   const chestHistory = useStore((s) => s.chestHistory);
   const dailyQuests = useStore((s) => s.dailyQuests);
   const streakFreezesEarned = useStore((s) => s.streakFreezesEarned);
+  const dailyPlans = useStore((s) => s.dailyPlans);
 
   const bossStates = useMemo(
     () =>
@@ -59,6 +60,7 @@ export default function AchievementsPage() {
         chestHistory,
         dailyQuests,
         streakFreezesEarned,
+        dailyPlans,
       }),
     [
       xp,
@@ -72,6 +74,7 @@ export default function AchievementsPage() {
       chestHistory,
       dailyQuests,
       streakFreezesEarned,
+      dailyPlans,
     ]
   );
 

@@ -431,6 +431,40 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     real_reward: "Sober выходной + долгий завтрак",
     category: "ревью",
   },
+
+  // Focus / ritual / inbox
+  {
+    id: "clean_inbox",
+    name: "Чистый Inbox",
+    description: "Разобрать весь Inbox",
+    reward_xp: 80,
+    real_reward: "30 минут тишины",
+    category: "задачи",
+  },
+  {
+    id: "committed_3_days",
+    name: "Слово держу",
+    description: "3 дня подряд закрывал committed-задачи",
+    reward_xp: 150,
+    real_reward: "Любимый ужин",
+    category: "стрики",
+  },
+  {
+    id: "recovery_done",
+    name: "Вернулся",
+    description: "Вернулся в работу после пропущенного дня",
+    reward_xp: 50,
+    real_reward: "Час без вины",
+    category: "старт",
+  },
+  {
+    id: "planned_week",
+    name: "Архитектор недели",
+    description: "7 дней подряд начинал день с утреннего ритуала",
+    reward_xp: 200,
+    real_reward: "Хороший планер на бумаге",
+    category: "ревью",
+  },
 ];
 
 export type CheckInput = {
@@ -445,6 +479,11 @@ export type CheckInput = {
   chestHistory?: Array<{ tier: string; xp: number; date: string }>;
   dailyQuests?: Array<{ date: string; rewarded: boolean }>;
   streakFreezesEarned?: number;
+  dailyPlans?: Array<{
+    date: string;
+    committed_task_ids: string[];
+    finalized_at?: string;
+  }>;
 };
 
 export function checkAchievements(input: CheckInput): AchievementId[] {
@@ -565,6 +604,66 @@ export function checkAchievements(input: CheckInput): AchievementId[] {
     unlocked.push("quest_master");
   }
   if ((input.streakFreezesEarned ?? 0) >= 1) unlocked.push("frozen_saved");
+
+  // v7 — ритуал, focus, inbox
+  const hadInbox = input.tasks.some((t) => t.status === "inbox");
+  const totalTasksTouched = input.tasks.length > 0;
+  if (totalTasksTouched && !hadInbox && doneCount > 0) {
+    unlocked.push("clean_inbox");
+  }
+
+  const plans = input.dailyPlans ?? [];
+  if (plans.length > 0) {
+    // committed_3_days: 3 последних дня подряд, у каждого ≥1 закрытая committed-задача
+    const sorted = [...plans].sort((a, b) => b.date.localeCompare(a.date));
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < sorted.length; i++) {
+      const expected = new Date(today);
+      expected.setDate(expected.getDate() - i);
+      const expectedISO = expected.toISOString().slice(0, 10);
+      const p = sorted[i];
+      if (p.date !== expectedISO) break;
+      const hasClosed = p.committed_task_ids.some((id) => {
+        const t = input.tasks.find((x) => x.id === id);
+        return (
+          t &&
+          t.status === "done" &&
+          t.completed_at &&
+          t.completed_at.startsWith(p.date)
+        );
+      });
+      if (!hasClosed) break;
+      streak += 1;
+    }
+    if (streak >= 3) unlocked.push("committed_3_days");
+
+    // planned_week: 7 dailyPlans подряд (просто наличие записи)
+    let plannedStreak = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const expected = new Date(today);
+      expected.setDate(expected.getDate() - i);
+      const expectedISO = expected.toISOString().slice(0, 10);
+      if (sorted[i].date !== expectedISO) break;
+      plannedStreak += 1;
+    }
+    if (plannedStreak >= 7) unlocked.push("planned_week");
+
+    // recovery_done: есть план сегодня + был день без активности до этого
+    const todayISO = today.toISOString().slice(0, 10);
+    const hasTodayPlan = plans.some((p) => p.date === todayISO);
+    if (hasTodayPlan) {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yISO = yesterday.toISOString().slice(0, 10);
+      const yPlan = plans.find((p) => p.date === yISO);
+      const yClosed = input.tasks.some(
+        (t) => t.completed_at && t.completed_at.startsWith(yISO)
+      );
+      if (yPlan && !yClosed) unlocked.push("recovery_done");
+    }
+  }
 
   return Array.from(new Set(unlocked));
 }

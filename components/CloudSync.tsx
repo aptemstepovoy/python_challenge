@@ -39,6 +39,14 @@ const PERSIST_KEYS = [
   "recentDrops",
   "lastLevelClaimed",
   "accountStartDate",
+  "dailyPlans",
+  "efforts",
+  "effortLogs",
+  "dailyCapacityHours",
+  "preferredEnergyMorning",
+  "preferredEnergyAfternoon",
+  "preferredEnergyEvening",
+  "inboxTasks",
 ] as const;
 
 function snapshot(state: ReturnType<typeof useStore.getState>) {
