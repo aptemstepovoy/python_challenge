@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import {
   todayCompletionRatio,
   visibleTodayHabits,
+  dailyHabits,
+  logForToday,
 } from "@/lib/habits-logic";
 import { Icon } from "@/components/Icon";
 import { haptic } from "@/lib/haptics";
@@ -25,8 +28,8 @@ function Burst({ color }: { color: string }) {
             key={i}
             initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
             animate={{
-              x: Math.cos(rad) * 32,
-              y: Math.sin(rad) * 32,
+              x: Math.cos(rad) * 36,
+              y: Math.sin(rad) * 36,
               opacity: 0,
               scale: 0.3,
             }}
@@ -49,24 +52,39 @@ export function HabitsRow() {
   const toggleHabit = useStore((s) => s.toggleHabit);
 
   const today = new Date();
-  const visible = visibleTodayHabits(habits, habitLogs, today);
+  const todayISO = today.toISOString().slice(0, 10);
+
+  // Все daily-привычки за сегодня — включая уже закрытые, чтобы юзер
+  // видел название и понимал что сделано.
+  const dailies = dailyHabits(habits, today);
+  // Weekly-привычки только если ещё в плане (не выбили норму).
+  const otherVisible = visibleTodayHabits(habits, habitLogs, today).filter(
+    (h) => h.frequency !== "daily"
+  );
+  const all = [...dailies, ...otherVisible];
+
   const ratio = todayCompletionRatio(habits, habitLogs, today);
 
   const [celebrate, setCelebrate] = useState<{ id: string; color: string } | null>(
     null
   );
 
-  const onTap = (id: string, color: string) => {
+  const onTap = (id: string, color: string, alreadyDone: boolean) => {
     haptic("success");
-    playHabitDone();
-    setCelebrate({ id, color });
-    setTimeout(() => {
+    if (!alreadyDone) {
+      playHabitDone();
+      setCelebrate({ id, color });
+      setTimeout(() => {
+        toggleHabit(id);
+        setCelebrate(null);
+      }, 450);
+    } else {
+      // отмена/перетыкание
       toggleHabit(id);
-      setCelebrate(null);
-    }, 450);
+    }
   };
 
-  if (visible.length === 0 && ratio.total === 0) return null;
+  if (all.length === 0) return null;
 
   return (
     <section>
@@ -87,31 +105,47 @@ export function HabitsRow() {
           </Link>
         </div>
       </div>
-      {visible.length === 0 ? (
-        <div className="text-xs text-secondary">
-          Все daily-привычки закрыты сегодня 🔥
-        </div>
-      ) : (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {visible.map((h) => (
+      <div className="flex flex-wrap gap-2">
+        {all.map((h) => {
+          const done = !!logForToday(habitLogs, h.id, todayISO);
+          const celebrating = celebrate?.id === h.id;
+          return (
             <motion.button
               key={h.id}
-              onClick={() => onTap(h.id, h.color)}
-              whileTap={{ scale: 0.9 }}
+              onClick={() => onTap(h.id, h.color, done)}
+              whileTap={{ scale: 0.95 }}
               className={cn(
-                "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2",
-                "bg-surface transition-colors"
+                "relative flex items-center gap-2 rounded-full border-2 px-3 py-1.5 text-xs transition-colors",
+                done
+                  ? "border-transparent text-background"
+                  : "bg-surface text-foreground"
               )}
-              style={{ borderColor: h.color, color: h.color }}
-              title={h.name}
-              aria-label={h.name}
+              style={
+                done
+                  ? { background: h.color, borderColor: h.color }
+                  : { borderColor: h.color, color: h.color }
+              }
+              title={h.description || h.name}
+              aria-pressed={done}
             >
-              <Icon name={h.icon} className="h-4 w-4" />
-              {celebrate?.id === h.id && <Burst color={celebrate.color} />}
+              {done ? (
+                <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
+              ) : (
+                <Icon name={h.icon} className="h-3.5 w-3.5 shrink-0" />
+              )}
+              <span
+                className={cn(
+                  "font-mono text-[11px] uppercase tracking-wider whitespace-nowrap",
+                  done ? "text-background" : "text-foreground"
+                )}
+              >
+                {h.name}
+              </span>
+              {celebrating && <Burst color={h.color} />}
             </motion.button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </section>
   );
 }
