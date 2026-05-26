@@ -27,7 +27,7 @@ const TIER_COLOR: Record<ChestReward["tier"], string> = {
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export function DailyChest() {
+export function DailyChest({ mode = "card" }: { mode?: "card" | "icon" }) {
   const lastOpened = useStore((s) => s.lastChestOpened);
   const chestStreak = useStore((s) => s.chestStreak);
   const openChest = useStore((s) => s.openDailyChest);
@@ -53,6 +53,30 @@ export function DailyChest() {
       setBusy(false);
     }
   };
+
+  // Icon-only variant for the compact stat strip.
+  if (mode === "icon") {
+    return (
+      <>
+        <motion.button
+          onClick={open}
+          disabled={busy || !available}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+            available
+              ? "text-gold-bright hover:text-gold animate-pulse-glow"
+              : "text-secondary/40 cursor-not-allowed"
+          )}
+          whileTap={available ? { scale: 0.9 } : undefined}
+          aria-label="Дневной сундук"
+          title={available ? "Открыть дневной сундук" : "Сундук уже открыт"}
+        >
+          <Gift className="h-4 w-4" strokeWidth={2.2} />
+        </motion.button>
+        <RewardModal reveal={reveal} onClose={() => setReveal(null)} />
+      </>
+    );
+  }
 
   if (!available && !reveal) {
     return (
@@ -106,72 +130,81 @@ export function DailyChest() {
         <Sparkles className="h-5 w-5 shrink-0 text-accent-bright" />
       </motion.button>
 
-      <AnimatePresence>
-        {reveal && (
+      <RewardModal reveal={reveal} onClose={() => { setReveal(null); setBusy(false); }} />
+    </>
+  );
+}
+
+function RewardModal({
+  reveal,
+  onClose,
+}: {
+  reveal: ChestReward | null;
+  onClose: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {reveal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
+          onClick={onClose}
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
-            onClick={() => {
-              setReveal(null);
-              setBusy(false);
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.7, opacity: 0 }}
+            transition={{ type: "spring", damping: 14 }}
+            className="rounded-md p-6 max-w-sm w-full text-center relative overflow-hidden bg-surface-2 border border-border-bright"
+            style={{
+              boxShadow: `0 0 60px ${TIER_COLOR[reveal.tier]}99`,
             }}
           >
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.7, opacity: 0 }}
-              transition={{ type: "spring", damping: 14 }}
-              className="panel-hero corners rounded-md p-6 max-w-sm w-full text-center relative overflow-hidden"
-              style={{
-                boxShadow: `0 0 60px ${TIER_COLOR[reveal.tier]}99`,
-              }}
+            {Array.from({ length: 16 }).map((_, i) => {
+              const angle = (i * 360) / 16;
+              const rad = (angle * Math.PI) / 180;
+              return (
+                <motion.span
+                  key={i}
+                  initial={{ x: 0, y: 0, opacity: 1, scale: 0.8 }}
+                  animate={{
+                    x: Math.cos(rad) * 140,
+                    y: Math.sin(rad) * 140,
+                    opacity: 0,
+                    scale: 0.2,
+                  }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{
+                    background: TIER_COLOR[reveal.tier],
+                    boxShadow: `0 0 12px ${TIER_COLOR[reveal.tier]}`,
+                  }}
+                />
+              );
+            })}
+            <div
+              className="display text-sm uppercase tracking-[0.25em] mb-3"
+              style={{ color: TIER_COLOR[reveal.tier] }}
             >
-              {Array.from({ length: 16 }).map((_, i) => {
-                const angle = (i * 360) / 16;
-                const rad = (angle * Math.PI) / 180;
-                return (
-                  <motion.span
-                    key={i}
-                    initial={{ x: 0, y: 0, opacity: 1, scale: 0.8 }}
-                    animate={{
-                      x: Math.cos(rad) * 140,
-                      y: Math.sin(rad) * 140,
-                      opacity: 0,
-                      scale: 0.2,
-                    }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{
-                      background: TIER_COLOR[reveal.tier],
-                      boxShadow: `0 0 12px ${TIER_COLOR[reveal.tier]}`,
-                    }}
-                  />
-                );
-              })}
-              <div
-                className="display text-sm uppercase tracking-[0.25em] mb-3"
-                style={{ color: TIER_COLOR[reveal.tier] }}
-              >
-                {TIER_LABEL[reveal.tier]}
-              </div>
-              <div
-                className="display text-5xl mb-2 text-glow"
-                style={{ color: TIER_COLOR[reveal.tier] }}
-              >
-                +{reveal.xp}
-              </div>
-              <div className="font-mono text-sm uppercase tracking-wider text-foreground">
-                XP
-              </div>
-              <div className="mt-4 font-mono text-[10px] uppercase tracking-wider text-secondary">
-                тапни чтобы закрыть
-              </div>
-            </motion.div>
+              {TIER_LABEL[reveal.tier]}
+            </div>
+            <div
+              className="display text-5xl mb-2 text-glow"
+              style={{ color: TIER_COLOR[reveal.tier] }}
+            >
+              +{reveal.xp}
+            </div>
+            <div className="font-mono text-sm uppercase tracking-wider text-foreground">
+              XP
+            </div>
+            <div className="mt-4 font-mono text-[10px] uppercase tracking-wider text-secondary">
+              тапни чтобы закрыть
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

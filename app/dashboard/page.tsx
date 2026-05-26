@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { KGICard } from "@/components/KGICard";
 import { WeightChart } from "@/components/WeightChart";
 import { HabitHeatmap } from "@/components/HabitHeatmap";
+import { CharacterCard } from "@/components/CharacterCard";
+import { TodaySummary } from "@/components/TodaySummary";
 import { useStore } from "@/lib/store";
 import { initialBosses } from "@/lib/initial-data";
 import { computeBossState } from "@/lib/bosses-logic";
@@ -76,6 +78,14 @@ export default function DashboardPage() {
           К свободе через систему · 12 месяцев
         </p>
       </header>
+
+      {/* Гейм-якорь и снимок дня (перенесено с /today) */}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+        <div className="h-[420px] md:h-[480px]">
+          <CharacterCard />
+        </div>
+        <TodaySummary />
+      </section>
 
       {/* Hero: macro progress to milestones */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
