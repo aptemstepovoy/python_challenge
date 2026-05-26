@@ -56,7 +56,8 @@ export function TalentTree({
         <DialogPrimitive.Content
           className={cn(
             "fixed left-1/2 top-1/2 z-[71] w-[94vw] max-w-2xl -translate-x-1/2 -translate-y-1/2",
-            "max-h-[90vh] overflow-y-auto panel-hero corners rounded-lg p-4 md:p-6"
+            "max-h-[90vh] overflow-y-auto bg-surface-2 border border-border-bright shadow-lift",
+            "rounded-lg p-4 md:p-6"
           )}
         >
           <DialogPrimitive.Title className="sr-only">
