@@ -32,9 +32,7 @@ import { levelFromXP, progressWithinLevel } from "@/lib/xp";
 import { Progress } from "@/components/ui/progress";
 import { CountUp } from "@/components/CountUp";
 import { haptic } from "@/lib/haptics";
-import { TalentTree } from "@/components/TalentTree";
-import { Inventory } from "@/components/Inventory";
-import { EveningRitual } from "@/components/EveningRitual";
+import { useUIStore } from "@/lib/ui-store";
 
 function FreezeRow({ count }: { count: number }) {
   const [show, setShow] = useState(false);
@@ -106,11 +104,10 @@ export function UserMenu({
   const lvl = levelFromXP(xp);
   const lvlPct = progressWithinLevel(xp);
   const streakFreezes = useStore((s) => s.streakFreezes);
-  const [eveningOpen, setEveningOpen] = useState(false);
-  const [talentsOpen, setTalentsOpen] = useState(false);
-  const [inventoryOpen, setInventoryOpen] = useState(false);
   const talentPoints = useStore((s) => s.talentPoints);
   const inventoryCount = useStore((s) => s.inventory.length);
+  const setTalentsOpen = useUIStore((s) => s.setTalentsOpen);
+  const setInventoryOpen = useUIStore((s) => s.setInventoryOpen);
   const [email, setEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -297,7 +294,7 @@ export function UserMenu({
               <button
                 onClick={() => {
                   setOpen(false);
-                  setTimeout(() => setEveningOpen(true), 200);
+                  router.push("/journal");
                 }}
                 className={cn(
                   "flex w-full items-center justify-between rounded-md px-3 py-2.5 text-base transition-colors",
@@ -331,9 +328,6 @@ export function UserMenu({
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
-      <EveningRitual open={eveningOpen} onOpenChange={setEveningOpen} />
-      <TalentTree open={talentsOpen} onOpenChange={setTalentsOpen} />
-      <Inventory open={inventoryOpen} onOpenChange={setInventoryOpen} />
     </DialogPrimitive.Root>
   );
 }

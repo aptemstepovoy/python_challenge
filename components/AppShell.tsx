@@ -12,6 +12,9 @@ import { LootToast } from "@/components/LootToast";
 import { LevelRewardsWatcher } from "@/components/LevelRewardsWatcher";
 import { StreakFreezeAutomation } from "@/components/StreakFreezeAutomation";
 import { RitualWatchers } from "@/components/RitualWatchers";
+import { TalentTree } from "@/components/TalentTree";
+import { Inventory } from "@/components/Inventory";
+import { useUIStore } from "@/lib/ui-store";
 
 function isAuthRoute(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -25,6 +28,10 @@ function isAuthRoute(pathname: string | null): boolean {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const bare = isAuthRoute(pathname);
+  const talentsOpen = useUIStore((s) => s.talentsOpen);
+  const setTalentsOpen = useUIStore((s) => s.setTalentsOpen);
+  const inventoryOpen = useUIStore((s) => s.inventoryOpen);
+  const setInventoryOpen = useUIStore((s) => s.setInventoryOpen);
 
   if (bare) {
     return <>{children}</>;
@@ -48,6 +55,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <RitualWatchers />
       <FocusTimer />
       <IntroAnimation />
+      <TalentTree open={talentsOpen} onOpenChange={setTalentsOpen} />
+      <Inventory open={inventoryOpen} onOpenChange={setInventoryOpen} />
     </>
   );
 }
