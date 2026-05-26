@@ -78,9 +78,8 @@ export function InsightDialog({
               }}
             />
           </div>
-          <div className="font-mono text-[11px] uppercase tracking-wider text-secondary">
-            +<span className="num text-accent-bright">10</span> XP за инсайт ·
-            {" "}на /insights — вся история
+          <div className="text-[11px] text-secondary">
+            Вся история — на /insights
           </div>
         </div>
         <div className="flex justify-end gap-2">

@@ -15,7 +15,8 @@ const items = [
   { href: "/tasks", label: "План" },
   { href: "/habits", label: "Привычки" },
   { href: "/goals", label: "Цели" },
-  { href: "/journal", label: "Журнал" },
+  { href: "/insights", label: "Инсайты" },
+  { href: "/journal", label: "Отчёт за день" },
 ];
 
 export function Sidebar() {

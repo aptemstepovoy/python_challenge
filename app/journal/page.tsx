@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { JournalForm } from "@/components/JournalForm";
 import { JournalHistory } from "@/components/JournalHistory";
 import { AuthBlock } from "@/components/AuthBlock";
 import { useStore } from "@/lib/store";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Check, Sparkles, Sun } from "lucide-react";
+import { Check, Sun } from "lucide-react";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -65,50 +64,50 @@ export default function JournalPage() {
   }, [journals]);
 
   return (
-    <div className="p-4 space-y-6 md:p-10 md:space-y-8">
-      <header className="flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between md:pb-6">
+    <div className="p-4 space-y-6 md:p-8 md:space-y-8 max-w-3xl mx-auto">
+      <header className="flex flex-col gap-3 border-b border-border pb-5 md:flex-row md:items-baseline md:justify-between">
         <div>
-          <h1 className="display text-3xl text-foreground text-glow md:text-4xl">
+          <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
             Отчёт за день
           </h1>
-          <p className="mt-2 text-base text-secondary">
+          <p className="mt-1.5 text-sm text-secondary">
             Что сделано, фокус завтра, состояние, инсайты, рефлексия
           </p>
         </div>
         {finalized && (
-          <div className="self-start md:self-auto flex items-center gap-2 rounded-full border border-ok/40 bg-ok/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-ok-bright">
+          <div className="self-start md:self-auto flex items-center gap-1.5 rounded-full border border-ok/40 bg-ok/10 px-3 py-1 text-[11px] text-ok-bright">
             <Check className="h-3 w-3" />
             День завершён, до завтра
           </div>
         )}
         {!finalized && !showForm && (
-          <Button onClick={() => setShowForm(true)} className="self-start md:self-auto">
+          <Button onClick={() => setShowForm(true)} size="sm">
             Новый отчёт
           </Button>
         )}
       </header>
 
       {finalized && (
-        <Card className="p-5 md:p-6">
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-accent-bright mb-3">
-            <Sun className="h-3.5 w-3.5" />
+        <section className="rounded-lg border border-border bg-surface p-5">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-secondary mb-3">
+            <Sun className="h-3.5 w-3.5 text-accent-bright" />
             {format(nowDate, "EEEE, d MMMM", { locale: ru })} · день завершён
           </div>
-          <div className="display text-2xl text-foreground text-glow mb-2 md:text-3xl">
+          <div className="text-xl font-semibold text-foreground mb-1 md:text-2xl">
             Молодец. До завтра.
           </div>
           <p className="text-sm text-secondary leading-relaxed mb-4">
             Сегодня ты закрыл{" "}
             <span className="num text-foreground">{doneToday.length}</span>{" "}
-            задач{doneToday.length === 1 ? "у" : ""}. Отчёт сохранён.
-            Следующее окно — утром.
+            задач{doneToday.length === 1 ? "у" : ""}. Отчёт сохранён. Следующее
+            окно — утром.
           </p>
           {doneToday.length > 0 && (
             <div className="space-y-1">
               {doneToday.slice(0, 8).map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center gap-2 text-xs text-foreground/80"
+                  className="flex items-center gap-2 text-xs text-foreground/85"
                 >
                   <Check className="h-3 w-3 shrink-0 text-ok-bright" />
                   <span className="flex-1 truncate">{t.title}</span>
@@ -122,8 +121,8 @@ export default function JournalPage() {
             </div>
           )}
           {todayJournal?.reflection && (
-            <div className="mt-4 rounded-md border border-border bg-surface-2/40 px-3 py-2.5">
-              <div className="font-mono text-[10px] uppercase tracking-wider text-secondary mb-1">
+            <div className="mt-4 rounded-md border border-border bg-surface-2 px-3 py-2.5">
+              <div className="text-[10px] uppercase tracking-wider text-secondary mb-1">
                 Рефлексия
               </div>
               <p className="text-sm text-foreground/85 whitespace-pre-wrap">
@@ -131,11 +130,7 @@ export default function JournalPage() {
               </p>
             </div>
           )}
-          <div className="mt-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted">
-            <Sparkles className="h-3 w-3 text-accent-bright" />
-            Хочешь дописать что-то — пожалуйста, форма ниже остаётся открытой.
-          </div>
-        </Card>
+        </section>
       )}
 
       {!finalized && showForm && (
@@ -143,7 +138,7 @@ export default function JournalPage() {
       )}
 
       {finalized && (
-        <details className="group">
+        <details>
           <summary className="cursor-pointer text-sm text-secondary hover:text-foreground">
             Дописать ещё одну запись →
           </summary>
@@ -154,62 +149,51 @@ export default function JournalPage() {
       )}
 
       <section>
-        <div className="mb-4 display text-2xl text-foreground md:text-3xl">
-          История
-        </div>
+        <div className="mb-3 text-xl font-semibold text-foreground">История</div>
         <JournalHistory />
       </section>
 
-      <section>
-        <Card className="p-5 md:p-6">
-          <h3 className="mb-4 display text-xl text-foreground">
-            Метрики
-          </h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-md border border-border bg-surface-2/50 p-4">
-              <div className="font-mono text-xs uppercase tracking-wider text-secondary">
-                Всего отчётов
-              </div>
-              <div className="num mt-1 text-2xl text-foreground">
-                {journals.length}
-              </div>
-            </div>
-            <div className="rounded-md border border-border bg-surface-2/50 p-4">
-              <div className="font-mono text-xs uppercase tracking-wider text-secondary">
-                За неделю
-              </div>
-              <div className="num mt-1 text-2xl text-foreground">
-                {thisWeek}
-              </div>
-            </div>
-            <div className="rounded-md border border-border bg-surface-2/50 p-4">
-              <div className="font-mono text-xs uppercase tracking-wider text-secondary">
-                За месяц
-              </div>
-              <div className="num mt-1 text-2xl text-foreground">
-                {last30}
-              </div>
-            </div>
-            <div className="rounded-md border border-border bg-surface-2/50 p-4">
-              <div className="font-mono text-xs uppercase tracking-wider text-secondary">
-                Streak дней
-              </div>
-              <div className="num mt-1 text-2xl text-accent-bright">
-                {streak}
-              </div>
-            </div>
-          </div>
-        </Card>
+      <section className="rounded-lg border border-border bg-surface p-5">
+        <h3 className="mb-3 text-base font-semibold text-foreground">Метрики</h3>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Metric label="Всего отчётов" value={journals.length} />
+          <Metric label="За неделю" value={thisWeek} />
+          <Metric label="За месяц" value={last30} />
+          <Metric label="Streak дней" value={streak} accent />
+        </div>
       </section>
 
       <section className="md:hidden">
-        <div className="mb-4 display text-2xl text-foreground">
-          Аккаунт
-        </div>
-        <div className="panel rounded-md p-5">
+        <div className="mb-3 text-base font-semibold text-foreground">Аккаунт</div>
+        <div className="rounded-lg border border-border bg-surface p-5">
           <AuthBlock />
         </div>
       </section>
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-md border border-border bg-surface-2 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-secondary">
+        {label}
+      </div>
+      <div
+        className={`num mt-1 text-xl ${
+          accent ? "text-accent-bright" : "text-foreground"
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }

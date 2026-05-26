@@ -17,9 +17,9 @@ export function JournalHistory() {
 
   if (journals.length === 0) {
     return (
-      <div className="panel rounded-md p-6 text-base text-secondary">
-        Записей пока нет. Заполни форму выше — это даст +30 XP и материал
-        для анализа недели.
+      <div className="rounded-md border border-border bg-surface p-6 text-sm text-secondary">
+        Записей пока нет. Заполни форму выше — это материал для анализа
+        недели.
       </div>
     );
   }

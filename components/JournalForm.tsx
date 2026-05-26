@@ -86,7 +86,7 @@ export function JournalForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
   return (
     <Card className="p-5 md:p-6">
-      <h3 className="mb-2 display text-xl text-foreground">
+      <h3 className="mb-2 text-lg font-semibold text-foreground">
         Новый отчёт
       </h3>
       {todayJournal && (

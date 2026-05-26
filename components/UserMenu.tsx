@@ -12,6 +12,7 @@ import {
   Repeat,
   Target,
   ScrollText,
+  Lightbulb,
   Moon,
   X,
 } from "lucide-react";
@@ -25,7 +26,8 @@ const NAV = [
   { href: "/tasks", label: "План", icon: ListChecks },
   { href: "/habits", label: "Привычки", icon: Repeat },
   { href: "/goals", label: "Цели", icon: Target },
-  { href: "/journal", label: "Журнал", icon: ScrollText },
+  { href: "/insights", label: "Инсайты", icon: Lightbulb },
+  { href: "/journal", label: "Отчёт за день", icon: ScrollText },
 ];
 
 export function UserMenu({ trigger }: { trigger: React.ReactNode }) {
