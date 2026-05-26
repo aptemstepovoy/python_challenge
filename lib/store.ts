@@ -86,6 +86,7 @@ type State = {
   preferredEnergyAfternoon: EnergyLevel;
   preferredEnergyEvening: EnergyLevel;
   inboxTasks: string[];
+  vision: string;
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -144,6 +145,7 @@ type State = {
   moveTaskToInbox: (taskId: string) => void;
   graduateFromInbox: (taskId: string, patch: Partial<Task>) => void;
   setDailyCapacity: (hours: number) => void;
+  setVision: (vision: string) => void;
 
   resetData: () => void;
 };
@@ -270,6 +272,8 @@ export const useStore = create<State>()(
       preferredEnergyAfternoon: "medium",
       preferredEnergyEvening: "low",
       inboxTasks: [],
+      vision:
+        "К свободе через систему — Бали, $6000/мес, B2 English, форма 92 кг",
 
       setKGI: (id, current_value) =>
         set((s) => ({
@@ -994,6 +998,8 @@ export const useStore = create<State>()(
           ),
         })),
 
+      setVision: (vision) => set({ vision: vision.trim().slice(0, 240) }),
+
       setDailyCapacity: (hours) =>
         set({ dailyCapacityHours: Math.max(1, Math.min(16, Math.round(hours))) }),
 
@@ -1039,6 +1045,8 @@ export const useStore = create<State>()(
           preferredEnergyAfternoon: "medium",
           preferredEnergyEvening: "low",
           inboxTasks: [],
+          vision:
+            "К свободе через систему — Бали, $6000/мес, B2 English, форма 92 кг",
         }),
     }),
     {
@@ -1071,6 +1079,9 @@ export const useStore = create<State>()(
         if (!state.preferredEnergyEvening)
           state.preferredEnergyEvening = "low";
         if (!state.inboxTasks) state.inboxTasks = [];
+        if (!state.vision)
+          state.vision =
+            "К свободе через систему — Бали, $6000/мес, B2 English, форма 92 кг";
         return state;
       },
     }

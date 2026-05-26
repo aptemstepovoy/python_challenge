@@ -5,6 +5,7 @@ import { pickMainTask, slackDays } from "@/lib/today-logic";
 import { Button } from "@/components/ui/button";
 import { Play, Check, Sparkles } from "lucide-react";
 import { haptic } from "@/lib/haptics";
+import { BossLinkPill } from "@/components/BossLinkPill";
 
 export function NowCard() {
   const tasks = useStore((s) => s.tasks);
@@ -50,10 +51,13 @@ export function NowCard() {
       <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-bright mb-1">
         ◆ Сейчас
       </div>
-      <div className="num text-[10px] uppercase tracking-wider text-secondary">
-        {current.id} · {current.estimated_days ?? 1} дн.
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 num text-[10px] uppercase tracking-wider text-secondary">
+        <span>
+          {current.id} · {current.estimated_days ?? 1} дн.
+        </span>
+        <BossLinkPill bossId={current.linked_boss} />
         {current.is_today_committed && (
-          <span className="text-accent-bright ml-2">· взято на сегодня</span>
+          <span className="text-accent-bright">· взято на сегодня</span>
         )}
       </div>
       <h2 className="display text-xl text-foreground mt-1 leading-tight md:text-2xl">

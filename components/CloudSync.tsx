@@ -47,6 +47,7 @@ const PERSIST_KEYS = [
   "preferredEnergyAfternoon",
   "preferredEnergyEvening",
   "inboxTasks",
+  "vision",
 ] as const;
 
 function snapshot(state: ReturnType<typeof useStore.getState>) {

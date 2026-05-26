@@ -8,14 +8,19 @@ import { HabitsRow } from "@/components/HabitsRow";
 import { EffortsRow } from "@/components/EffortsRow";
 import { StreakDangerBanner } from "@/components/StreakDangerBanner";
 import { RecoveryBanner } from "@/components/RecoveryBanner";
+import { BehindBanner } from "@/components/BehindBanner";
 import { MorningRitual } from "@/components/MorningRitual";
 import { MiniXPRing } from "@/components/MiniXPRing";
 import { DailyQuests } from "@/components/DailyQuests";
 import { DayProgressBar } from "@/components/DayProgressBar";
+import { MissionStrip } from "@/components/MissionStrip";
+import { WhyCard } from "@/components/WhyCard";
+import { useStore } from "@/lib/store";
 
 export default function TodayPage() {
   const [now, setNow] = useState<Date | null>(null);
   const [manualRitualOpen, setManualRitualOpen] = useState(false);
+  const dailyPlans = useStore((s) => s.dailyPlans);
 
   useEffect(() => {
     setNow(new Date());
@@ -27,12 +32,20 @@ export default function TodayPage() {
     return <div className="p-3 md:p-6" />;
   }
 
+  const today = now.toISOString().slice(0, 10);
+  const plan = dailyPlans.find((p) => p.date === today);
+
   return (
     <div className="p-3 space-y-3 md:p-6 md:space-y-4">
       <CompactHeader now={now} onOpenRitual={() => setManualRitualOpen(true)} />
 
+      <BehindBanner />
       <StreakDangerBanner />
       <RecoveryBanner />
+
+      {!plan?.intent && <WhyCard />}
+
+      <MissionStrip />
 
       <NowCard />
 

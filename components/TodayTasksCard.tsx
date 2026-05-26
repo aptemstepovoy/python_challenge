@@ -22,6 +22,7 @@ import {
 import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
+import { BossLinkPill } from "@/components/BossLinkPill";
 
 function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
   const today = useMemo(() => new Date(), []);
@@ -100,6 +101,7 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
             {slackLabel}
             <span className="text-accent-bright">· +{task.xp ?? 25}</span>
             {started && <span className="text-ok">· в работе</span>}
+            <BossLinkPill bossId={task.linked_boss} className="ml-1" />
           </span>
         </span>
         <ChevronRight

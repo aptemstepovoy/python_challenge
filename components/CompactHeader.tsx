@@ -89,7 +89,7 @@ export function CompactHeader({
   const dailyPlans = useStore((s) => s.dailyPlans);
   const dailyQuests = useStore((s) => s.dailyQuests);
   const lastChestOpened = useStore((s) => s.lastChestOpened);
-  const setInventoryOpen = useUIStore((s) => s.setInventoryOpen);
+  const setTalentsOpen = useUIStore((s) => s.setTalentsOpen);
 
   const [questsOpen, setQuestsOpen] = useState(false);
 
@@ -170,9 +170,9 @@ export function CompactHeader({
         {/* Stat strip — единственная полоска с цифрами */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 font-mono text-[10px] uppercase tracking-wider">
           <button
-            onClick={() => setInventoryOpen(true)}
+            onClick={() => setTalentsOpen(true)}
             className="flex items-center gap-1.5"
-            title="Уровень"
+            title="Уровень и таланты"
           >
             <LevelRing pct={lvlPct} level={lvl.num} />
             <span className="text-secondary">{lvl.title}</span>
