@@ -255,8 +255,8 @@ export function MorningRitual({
                             ⚡{t.energy}
                           </span>
                         )}
-                        <span className="text-accent-bright ml-auto">
-                          +{t.xp ?? 25}
+                        <span className="text-muted ml-auto">
+                          {t.estimated_days ?? 1} дн.
                         </span>
                       </div>
                     </div>
@@ -300,7 +300,7 @@ export function MorningRitual({
                   >
                     <div className="text-sm text-foreground">{t.title}</div>
                     <div className="font-mono text-[10px] uppercase tracking-wider text-secondary mt-0.5">
-                      {t.id} · +{t.xp ?? 25} XP
+                      {t.id} · {t.estimated_days ?? 1} дн.
                     </div>
                   </div>
                 );

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Manrope } from "next/font/google";
+import { Inter } from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import { PWARegister } from "@/components/PWARegister";
 import { CloudSync } from "@/components/CloudSync";
@@ -9,19 +9,6 @@ const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
   display: "swap",
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-jetbrains",
-  display: "swap",
-});
-
-const display = Manrope({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-display",
-  display: "swap",
-  weight: ["500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -57,9 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className="dark">
-      <body
-        className={`${inter.variable} ${jetbrains.variable} ${display.variable}`}
-      >
+      <body className={inter.variable}>
         <AppShell>{children}</AppShell>
         <PWARegister />
         <CloudSync />

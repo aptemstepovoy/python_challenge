@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { KGI, Step } from "./types";
-import { PLAN_START, TARGET_NOV, TARGET_MAY } from "./utils";
+import { PLAN_START, TARGET_NOV } from "./utils";
 
 export type KGIStatus = "ahead" | "on_track" | "behind" | "critical" | "done";
 

@@ -3,9 +3,8 @@
 import { useStore } from "@/lib/store";
 import { pickMainTask, slackDays } from "@/lib/today-logic";
 import { Button } from "@/components/ui/button";
-import { Play, Check, Sparkles } from "lucide-react";
+import { Play, Check } from "lucide-react";
 import { haptic } from "@/lib/haptics";
-import { BossLinkPill } from "@/components/BossLinkPill";
 
 export function NowCard() {
   const tasks = useStore((s) => s.tasks);
@@ -21,11 +20,10 @@ export function NowCard() {
 
   if (!current) {
     return (
-      <div className="panel-hero corners rounded-md p-4 md:p-5 text-center">
-        <Sparkles className="h-6 w-6 text-accent-bright mx-auto mb-2" />
-        <div className="display text-lg text-foreground">Сейчас стол чист</div>
+      <div className="rounded-lg border border-border bg-surface p-5 text-center">
+        <div className="text-base text-foreground">Стол чист</div>
         <p className="text-sm text-secondary mt-1">
-          Выбери задачи в утреннем ритуале или возьми задачу сам.
+          Положи задачу на сегодня в утреннем ритуале или возьми из плана.
         </p>
       </div>
     );
@@ -47,31 +45,20 @@ export function NowCard() {
       : "text-secondary";
 
   return (
-    <div className="panel-hero corners rounded-md p-4 md:p-5">
-      <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent-bright mb-1">
-        ◆ Сейчас
+    <section className="rounded-lg border border-accent/40 bg-surface p-5 space-y-3">
+      <div className="text-[11px] uppercase tracking-wider text-secondary">
+        Сейчас
       </div>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 num text-[10px] uppercase tracking-wider text-secondary">
-        <span>
-          {current.id} · {current.estimated_days ?? 1} дн.
-        </span>
-        <BossLinkPill bossId={current.linked_boss} />
-        {current.is_today_committed && (
-          <span className="text-accent-bright">· взято на сегодня</span>
-        )}
-      </div>
-      <h2 className="display text-xl text-foreground mt-1 leading-tight md:text-2xl">
+      <h2 className="text-xl font-semibold text-foreground leading-tight md:text-2xl">
         {current.title}
       </h2>
       {current.result_definition && (
-        <p className="text-sm text-secondary mt-2 line-clamp-2">
+        <p className="text-sm text-secondary line-clamp-2">
           {current.result_definition}
         </p>
       )}
-      <div className={`mt-2 font-mono text-[11px] uppercase tracking-wider ${slackTone}`}>
-        {slackLabel}
-      </div>
-      <div className="mt-4 flex gap-2">
+      <div className={`text-[12px] num ${slackTone}`}>{slackLabel}</div>
+      <div className="flex gap-2 pt-1">
         <Button
           variant={started ? "outline" : "default"}
           className="flex-1"
@@ -99,6 +86,6 @@ export function NowCard() {
           Готово
         </Button>
       </div>
-    </div>
+    </section>
   );
 }

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { JournalForm } from "@/components/JournalForm";
 import { JournalHistory } from "@/components/JournalHistory";
-import { DataIO } from "@/components/DataIO";
 import { AuthBlock } from "@/components/AuthBlock";
 import { useStore } from "@/lib/store";
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
@@ -29,7 +28,6 @@ export default function JournalPage() {
     () => tasks.filter((t) => t.completed_at?.startsWith(today)),
     [tasks, today]
   );
-  const xpToday = doneToday.reduce((acc, t) => acc + (t.xp ?? 25), 0);
 
   const nowDate = new Date();
   const thisWeek = journals.filter(
@@ -102,9 +100,8 @@ export default function JournalPage() {
           <p className="text-sm text-secondary leading-relaxed mb-4">
             Сегодня ты закрыл{" "}
             <span className="num text-foreground">{doneToday.length}</span>{" "}
-            задач{doneToday.length === 1 ? "у" : ""} на{" "}
-            <span className="num text-accent-bright">+{xpToday}</span> XP.
-            Отчёт сохранён. Следующее окно — утром.
+            задач{doneToday.length === 1 ? "у" : ""}. Отчёт сохранён.
+            Следующее окно — утром.
           </p>
           {doneToday.length > 0 && (
             <div className="space-y-1">
@@ -115,9 +112,6 @@ export default function JournalPage() {
                 >
                   <Check className="h-3 w-3 shrink-0 text-ok-bright" />
                   <span className="flex-1 truncate">{t.title}</span>
-                  <span className="num text-[10px] text-accent-bright shrink-0">
-                    +{t.xp ?? 25}
-                  </span>
                 </div>
               ))}
               {doneToday.length > 8 && (
@@ -206,13 +200,6 @@ export default function JournalPage() {
             </div>
           </div>
         </Card>
-      </section>
-
-      <section>
-        <div className="mb-4 display text-2xl text-foreground md:text-3xl">
-          Данные
-        </div>
-        <DataIO />
       </section>
 
       <section className="md:hidden">

@@ -3,13 +3,11 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { MorningRitual } from "@/components/MorningRitual";
-import { isRecoveryMode } from "@/components/RecoveryBanner";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export function RitualWatchers() {
   const dailyPlans = useStore((s) => s.dailyPlans);
-  const tasks = useStore((s) => s.tasks);
 
   const [morningOpen, setMorningOpen] = useState(false);
 
@@ -17,7 +15,7 @@ export function RitualWatchers() {
   const plan = dailyPlans.find((p) => p.date === today);
   const planExists = !!plan;
 
-  // Morning: open once on first visit of the day, 6:00–11:59.
+  // Morning ritual: opens once on first visit of the day between 6 and 12.
   useEffect(() => {
     if (planExists) return;
     const now = new Date();
@@ -27,14 +25,11 @@ export function RitualWatchers() {
     return () => clearTimeout(t);
   }, [planExists]);
 
-  const recovery = isRecoveryMode(dailyPlans, tasks);
-  const maxPicks = recovery ? 2 : 3;
-
   return (
     <MorningRitual
       open={morningOpen}
       onOpenChange={setMorningOpen}
-      maxPicks={maxPicks}
+      maxPicks={3}
     />
   );
 }

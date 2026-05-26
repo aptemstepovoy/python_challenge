@@ -8,7 +8,6 @@ import {
   visibleTodayHabits,
 } from "@/lib/habits-logic";
 import { HabitDailyCard, HabitWeeklyCard } from "@/components/HabitCard";
-import { HabitHeatmap } from "@/components/HabitHeatmap";
 import { HabitFormDialog } from "@/components/HabitFormDialog";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -175,10 +174,6 @@ export default function HabitsPage() {
             </AnimatePresence>
           </div>
         )}
-      </section>
-
-      <section>
-        <HabitHeatmap />
       </section>
 
       <section className="space-y-3">

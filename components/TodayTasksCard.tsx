@@ -8,7 +8,6 @@ import {
   ChevronRight,
   ListPlus,
   Play,
-  Sparkles,
   AlertTriangle,
   X,
 } from "lucide-react";
@@ -22,7 +21,6 @@ import {
 import { haptic } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
-import { BossLinkPill } from "@/components/BossLinkPill";
 
 function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
   const today = useMemo(() => new Date(), []);
@@ -44,21 +42,21 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
   const borderTone = overdue
     ? "border-danger/60 bg-danger/5"
     : committed
-    ? "border-accent/60 bg-accent/10"
+    ? "border-accent/50 bg-accent/5"
     : started
-    ? "border-accent/40 bg-accent/5"
-    : "border-border bg-surface";
+    ? "border-accent/30"
+    : "border-border";
 
   const slackLabel = overdue
-    ? `Опаздываешь ${-slack} дн.`
+    ? `опоздание ${-slack} дн.`
     : slack === 0
-    ? "Старт сегодня"
-    : `${slack} дн. запас`;
+    ? "старт сегодня"
+    : `+${slack} дн.`;
   const slackTone = overdue
     ? "text-danger-bright"
     : slack === 0
     ? "text-warn"
-    : "text-secondary";
+    : "text-muted";
 
   return (
     <motion.div
@@ -66,24 +64,20 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.18 }}
-      className={cn(
-        "rounded-md border transition-colors overflow-hidden",
-        borderTone
-      )}
+      transition={{ duration: 0.15 }}
+      className={cn("rounded-md border bg-surface overflow-hidden", borderTone)}
     >
       <button
         onClick={() => {
           haptic("tap");
           setExpanded((v) => !v);
         }}
-        className="w-full text-left px-3 py-2.5 flex items-center gap-2.5"
+        className="w-full text-left px-3 py-2.5 flex items-center gap-3"
       >
-        <span className="num shrink-0 text-[10px] text-muted">{task.id}</span>
         <span className="flex-1 min-w-0">
           <span
             className={cn(
-              "block text-sm truncate",
+              "block text-[14px] truncate",
               overdue ? "text-danger-bright" : "text-foreground"
             )}
           >
@@ -91,22 +85,18 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
           </span>
           <span
             className={cn(
-              "flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider mt-0.5",
+              "flex items-center gap-1.5 num text-[11px] mt-0.5",
               slackTone
             )}
           >
-            {overdue && (
-              <AlertTriangle className="h-3 w-3" strokeWidth={2.5} />
-            )}
+            {overdue && <AlertTriangle className="h-3 w-3" strokeWidth={2.5} />}
             {slackLabel}
-            <span className="text-accent-bright">· +{task.xp ?? 25}</span>
             {started && <span className="text-ok">· в работе</span>}
-            <BossLinkPill bossId={task.linked_boss} className="ml-1" />
           </span>
         </span>
         <ChevronRight
           className={cn(
-            "h-4 w-4 shrink-0 text-secondary transition-transform",
+            "h-4 w-4 shrink-0 text-muted transition-transform",
             expanded && "rotate-90"
           )}
         />
@@ -118,15 +108,15 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.15 }}
           >
-            <div className="px-3 pb-2.5 pt-1 space-y-2">
+            <div className="px-3 pb-3 pt-1 space-y-2">
               {task.result_definition && (
                 <p className="text-xs leading-snug text-secondary">
                   {task.result_definition}
                 </p>
               )}
-              <div className="flex flex-col gap-1.5 sm:flex-row">
+              <div className="flex gap-1.5">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -138,13 +128,13 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
                   }}
                   disabled={started}
                   className={cn(
-                    "flex-1 rounded-md border px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors",
+                    "flex-1 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
                     started
                       ? "border-border bg-surface-2 text-muted"
-                      : "border-accent-dim bg-surface-2 text-foreground hover:border-accent"
+                      : "border-accent-dim bg-surface text-foreground hover:border-accent"
                   )}
                 >
-                  <Play className="h-3 w-3" />
+                  <Play className="inline mr-1 h-3 w-3" />
                   {started ? "В работе" : "Начать"}
                 </button>
                 <button
@@ -154,9 +144,9 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
                     stopTimer();
                     completeTask(task.id);
                   }}
-                  className="flex-1 rounded-md border border-accent bg-accent/20 px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider text-accent-bright hover:bg-accent/30 flex items-center justify-center gap-1.5"
+                  className="flex-1 rounded-md border border-accent bg-accent/20 px-2.5 py-1.5 text-xs text-accent-bright hover:bg-accent/30"
                 >
-                  <Check className="h-3 w-3" />
+                  <Check className="inline mr-1 h-3 w-3" />
                   Сделано
                 </button>
                 {committed ? (
@@ -166,7 +156,7 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
                       uncommitTask(task.id);
                       haptic("tap");
                     }}
-                    className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider text-secondary hover:text-danger-bright hover:border-danger/40"
+                    className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-secondary hover:text-danger-bright"
                     title="Снять с сегодня"
                   >
                     <X className="h-3 w-3" />
@@ -181,13 +171,13 @@ function TaskRow({ task, committed }: { task: Task; committed?: boolean }) {
                     }}
                     disabled={snoozeBudget <= 0}
                     className={cn(
-                      "rounded-md border px-2.5 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors",
+                      "rounded-md border px-2.5 py-1.5 text-xs transition-colors",
                       snoozeBudget > 0
-                        ? "border-border bg-surface text-secondary hover:text-pink-bright hover:border-pink/40"
+                        ? "border-border bg-surface text-secondary hover:text-pink-bright"
                         : "border-border bg-surface text-muted cursor-not-allowed"
                     )}
                   >
-                    Не сегодня ({snoozeBudget})
+                    +1 день
                   </button>
                 )}
               </div>
@@ -219,26 +209,21 @@ function Section({
       ? "text-danger-bright"
       : tone === "accent"
       ? "text-accent-bright"
-      : "text-secondary";
+      : "text-muted";
   return (
     <div className="space-y-1.5">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2"
+        className="w-full flex items-center gap-2 py-1"
       >
-        <span
-          className={cn(
-            "font-mono text-[10px] uppercase tracking-[0.18em]",
-            toneClass
-          )}
-        >
-          ◆ {title}
+        <span className={cn("text-[11px] uppercase tracking-wider", toneClass)}>
+          {title}
         </span>
-        <span className={cn("num text-[10px]", toneClass)}>{count}</span>
+        <span className={cn("num text-[11px]", toneClass)}>{count}</span>
         <span className="flex-1" />
         <ChevronRight
           className={cn(
-            "h-3 w-3 text-secondary transition-transform",
+            "h-3 w-3 text-muted transition-transform",
             open && "rotate-90"
           )}
         />
@@ -261,25 +246,22 @@ export function TodayTasksCard() {
     [allTasks]
   );
 
-  const today_list = useMemo(() => pickTodayTasks(allTasks, today), [
-    allTasks,
-    today,
-  ]);
+  const todayList = useMemo(() => pickTodayTasks(allTasks, today), [allTasks, today]);
 
   const overdueRest = useMemo(
     () =>
-      today_list.filter(
+      todayList.filter(
         (t) => slackDays(t, today) < 0 && !t.is_today_committed
       ),
-    [today_list, today]
+    [todayList, today]
   );
 
   const startTodayRest = useMemo(
     () =>
-      today_list.filter(
+      todayList.filter(
         (t) => slackDays(t, today) >= 0 && !t.is_today_committed
       ),
-    [today_list, today]
+    [todayList, today]
   );
 
   const horizon = useMemo(() => pickHorizonTasks(allTasks, today, 7), [
@@ -300,63 +282,35 @@ export function TodayTasksCard() {
 
   if (empty) {
     return (
-      <div className="panel-bright corners rounded-md p-4 md:p-5 text-center space-y-3">
-        <Sparkles className="h-6 w-6 text-accent-bright mx-auto" />
-        <div className="display text-lg text-accent-bright">
-          На сегодня задач нет
-        </div>
-        <p className="text-sm text-secondary px-2 leading-snug">
-          Но ты можешь взять задачу сам
-        </p>
+      <section className="rounded-lg border border-border bg-surface p-5 text-center space-y-2">
+        <div className="text-base text-foreground">Задач на сегодня нет</div>
         <button
           onClick={() => {
             haptic("tap");
             router.push("/tasks");
           }}
-          className="mx-auto rounded-md border border-accent bg-accent/20 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-accent-bright hover:bg-accent/30 flex items-center gap-1.5"
+          className="mx-auto inline-flex items-center gap-1.5 rounded-md border border-accent bg-accent/20 px-3 py-1.5 text-xs text-accent-bright hover:bg-accent/30"
         >
           <ListPlus className="h-3 w-3" />
-          Взять задачу
+          Открыть план
         </button>
-      </div>
+      </section>
     );
   }
 
   const wipExceeded = inProgressCount > 3;
 
   return (
-    <div className="panel-bright corners rounded-md p-3 md:p-4 space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-wider">
-        <div className="flex flex-wrap items-center gap-2">
-          {overdueRest.length > 0 && (
-            <span className="text-danger-bright num">
-              {overdueRest.length} просрочено
-            </span>
-          )}
-          <span className="text-secondary">·</span>
-          <span className="text-foreground num">
-            {committed.length}/3 на сегодня
-          </span>
-          <span className="text-secondary">·</span>
-          <span className="text-secondary num">
-            {horizon.length} на горизонте
-          </span>
+    <section className="space-y-3">
+      {wipExceeded && (
+        <div className="text-[11px] text-danger-bright num">
+          Активных {inProgressCount}/3 — заверши или останови
         </div>
-        {wipExceeded && (
-          <span className="text-danger-bright num">
-            Активных {inProgressCount}/3 — заверши или останови
-          </span>
-        )}
-      </div>
+      )}
 
       <AnimatePresence>
         {overdueRest.length > 0 && (
-          <Section
-            title="Просрочено"
-            tone="danger"
-            count={overdueRest.length}
-            defaultOpen
-          >
+          <Section title="Просрочено" tone="danger" count={overdueRest.length}>
             {overdueRest.map((t) => (
               <TaskRow key={t.id} task={t} />
             ))}
@@ -364,12 +318,7 @@ export function TodayTasksCard() {
         )}
 
         {committed.length > 0 && (
-          <Section
-            title="На сегодня"
-            tone="accent"
-            count={committed.length}
-            defaultOpen
-          >
+          <Section title="На сегодня" tone="accent" count={committed.length}>
             {committed.map((t) => (
               <TaskRow key={t.id} task={t} committed />
             ))}
@@ -381,7 +330,6 @@ export function TodayTasksCard() {
             title="Стартует сегодня"
             tone="accent"
             count={startTodayRest.length}
-            defaultOpen
           >
             {startTodayRest.map((t) => (
               <TaskRow key={t.id} task={t} />
@@ -391,7 +339,7 @@ export function TodayTasksCard() {
 
         {horizon.length > 0 && (
           <Section
-            title="На горизонте · 7 дней"
+            title="На горизонте, 7 дней"
             tone="muted"
             count={horizon.length}
             defaultOpen={false}
@@ -408,10 +356,10 @@ export function TodayTasksCard() {
           haptic("tap");
           router.push("/tasks");
         }}
-        className="w-full text-center font-mono text-[10px] uppercase tracking-wider text-secondary hover:text-accent-bright"
+        className="w-full text-center text-[11px] text-muted hover:text-accent-bright transition-colors"
       >
         Все задачи →
       </button>
-    </div>
+    </section>
   );
 }

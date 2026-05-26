@@ -5,15 +5,11 @@ import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import { daysSinceAccountStart } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { levelFromXP } from "@/lib/xp";
-import { CountUp } from "@/components/CountUp";
 import { UserMenu } from "@/components/UserMenu";
 
 export function MobileTopBar() {
   const [now, setNow] = useState<Date | null>(null);
-  const xp = useStore((s) => s.xp);
   const accountStartDate = useStore((s) => s.accountStartDate);
-  const lvl = levelFromXP(xp);
 
   useEffect(() => {
     setNow(new Date());
@@ -22,30 +18,22 @@ export function MobileTopBar() {
   }, []);
 
   return (
-    <header
-      className="sticky top-0 z-40 flex items-center justify-between border-b border-border-bright bg-panel px-4 py-3 md:hidden"
-      style={{ boxShadow: "0 8px 24px -8px rgba(0,0,0,0.6), inset 0 -1px 0 rgba(243,201,122,0.06)" }}
-    >
-      <Link href="/today" className="flex items-baseline gap-2">
-        <span className="display text-base tracking-[0.18em] text-accent-bright text-glow-soft">
-          OPERATOR
-        </span>
-        <span className="font-mono text-[9px] uppercase tracking-wider text-secondary">
-          L{lvl.num}
-        </span>
+    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
+      <Link
+        href="/today"
+        className="text-base font-semibold tracking-tight text-foreground"
+      >
+        OPERATOR
       </Link>
-      <div className="flex items-center gap-3">
-        <span className="num text-[11px] text-accent-bright">
-          <CountUp value={xp} duration={500} /> XP
-        </span>
-        <span className="num text-[10px] text-secondary">
-          {now ? `D${daysSinceAccountStart(accountStartDate, now)}` : ""}
-        </span>
+      <div className="flex items-center gap-3 text-[12px] num text-muted">
+        {now && (
+          <span>День {daysSinceAccountStart(accountStartDate, now)}</span>
+        )}
         <UserMenu
           trigger={
             <button
               aria-label="menu"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet to-pink text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-accent-bright hover:bg-accent/30 transition-colors"
             >
               <User className="h-4 w-4" />
             </button>

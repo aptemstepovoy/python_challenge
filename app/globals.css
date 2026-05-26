@@ -14,28 +14,20 @@
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Subtle single ambient — replaces the noisy 3-color radial cocktail */
-    background-image:
-      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(124, 92, 255, 0.08) 0%, transparent 65%),
-      radial-gradient(ellipse 50% 40% at 100% 100%, rgba(57, 214, 240, 0.03) 0%, transparent 70%);
-    background-attachment: fixed;
   }
   ::selection {
     background: rgba(124, 92, 255, 0.4);
     color: #ffffff;
   }
   * {
-    border-color: #262b3a;
+    border-color: #1e222e;
   }
-  h1, h2, h3 {
-    letter-spacing: -0.01em;
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
     font-weight: 600;
   }
-  .font-mono {
-    font-weight: 500;
-    letter-spacing: -0.02em;
-  }
-  /* Three-tier text scale on dark bg */
   .text-muted {
     color: #6b7187;
   }
@@ -45,146 +37,9 @@
 }
 
 @layer utilities {
-  /* Tabular numeric — keep mono crisp for numbers */
+  /* Tabular numerals for stats — same font, just feature flag */
   .num {
-    font-family: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
-
-  /* Display — modern geometric (Space Grotesk), tight tracking */
-  .display {
-    font-family: var(--font-display), "Manrope", Inter, system-ui, sans-serif;
-    letter-spacing: -0.02em;
-    font-weight: 600;
-  }
-
-  /* Glow text — subtle, accent-coloured */
-  .text-glow {
-    text-shadow: 0 0 20px rgba(165, 148, 255, 0.4);
-  }
-  .text-glow-soft {
-    text-shadow: 0 0 10px rgba(124, 92, 255, 0.3);
-  }
-
-  .text-gradient {
-    background: linear-gradient(135deg, #a594ff 0%, #f25fa9 55%, #7ee9fa 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* Cards — flat layered surfaces, subtle inner highlight, soft drop */
-  .panel {
-    background-color: #10121b;
-    background-image:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, transparent 100%);
-    border: 1px solid #262b3a;
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
-      0 8px 24px -12px rgba(0, 0, 0, 0.55);
-  }
-
-  .panel-bright {
-    background-color: #181c28;
-    background-image:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
-    border: 1px solid #2f3548;
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
-      0 12px 32px -14px rgba(0, 0, 0, 0.65);
-  }
-
-  /* Hero — the only place where the magic gradient appears */
-  .panel-hero {
-    background-color: #11141d;
-    background-image:
-      linear-gradient(135deg, rgba(124, 92, 255, 0.14) 0%, rgba(242, 95, 169, 0.07) 55%, rgba(57, 214, 240, 0.05) 100%);
-    border: 1px solid #2f3548;
-    box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
-      0 20px 48px -20px rgba(0, 0, 0, 0.7),
-      0 0 64px -16px rgba(124, 92, 255, 0.28);
-  }
-
-  /* Compact "corner brackets" replaced with a clean micro-border treatment */
-  .corners {
-    position: relative;
-  }
-  .corners::before,
-  .corners::after {
-    content: "";
-    position: absolute;
-    width: 14px;
-    height: 14px;
-    border-color: rgba(165, 148, 255, 0.55);
-    border-style: solid;
-    border-width: 0;
-    pointer-events: none;
-    opacity: 0.45;
-  }
-  .corners::before {
-    top: 6px;
-    left: 6px;
-    border-top-width: 1.5px;
-    border-left-width: 1.5px;
-    border-top-left-radius: 4px;
-  }
-  .corners::after {
-    bottom: 6px;
-    right: 6px;
-    border-bottom-width: 1.5px;
-    border-right-width: 1.5px;
-    border-bottom-right-radius: 4px;
-  }
-
-  /* Section divider — thin centered ornament */
-  .ornament {
-    position: relative;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      #262b3a 30%,
-      #3a4156 50%,
-      #262b3a 70%,
-      transparent 100%
-    );
-  }
-  .ornament::after {
-    content: "◆";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    color: #7c5cff;
-    font-size: 8px;
-    background: #07080d;
-    padding: 0 8px;
-    opacity: 0.7;
-  }
-
-  /* Animated shimmer text — for hero level numbers, etc. */
-  .shimmer-text {
-    background: linear-gradient(
-      90deg,
-      #e8ebf5 0%,
-      #a594ff 25%,
-      #ff7ec0 50%,
-      #a594ff 75%,
-      #e8ebf5 100%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: shimmer 4s linear infinite;
-  }
-
-  /* Frosted overlay for modals */
-  .frosted {
-    background: rgba(7, 8, 13, 0.78);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    letter-spacing: -0.01em;
   }
 }

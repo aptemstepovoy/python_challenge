@@ -32,8 +32,8 @@ export type Task = {
   deadline: string;
   status: Status;
   result_definition: string;
-  xp?: number;
-  linked_boss?: string;
+  xp?: number; // deprecated, kept for backwards compatibility
+  linked_boss?: string; // deprecated
   snoozed_until?: string;
   started_at?: string;
   completed_at?: string;
@@ -98,8 +98,6 @@ export type WeightTarget = {
   weight_kg: number;
 };
 
-export type JournalState = string;
-
 export type DailyJournal = {
   id: string;
   date: string;
@@ -119,99 +117,6 @@ export type Insight = {
   created_at: string;
 };
 
-export type DailyXPEntry = {
-  date: string;
-  xp: number;
-  goalHit?: boolean;
-};
-
-export type ChestReward = {
-  xp: number;
-  tier: "common" | "uncommon" | "rare" | "epic" | "legendary";
-  date: string;
-};
-
-export type QuestId =
-  | "close_task_1"
-  | "close_task_3"
-  | "habits_3"
-  | "perfect_day"
-  | "insight_1"
-  | "journal_1"
-  | "log_weight"
-  | "open_chest"
-  | "focus_25"
-  | "boss_damage_50";
-
-export type Quest = {
-  id: QuestId;
-  name: string;
-  goal: number;
-  completed: boolean;
-};
-
-export type DailyQuestsSnapshot = {
-  date: string;
-  quests: Quest[];
-  rewarded: boolean;
-};
-
-export type TalentId =
-  | "spark"
-  | "morning_ritual"
-  | "winter_stash"
-  | "streak_lord"
-  | "ascendant"
-  | "swift_hand"
-  | "speed_needle"
-  | "focus_burn"
-  | "deep_focus"
-  | "warlord"
-  | "luck"
-  | "gatherer"
-  | "double_dip"
-  | "prospector"
-  | "looter"
-  | "ritual"
-  | "alchemist"
-  | "ideal"
-  | "double_reward"
-  | "archon";
-
-export type TalentRank = { id: TalentId; rank: number };
-
-export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
-
-export type ItemId =
-  | "shard_violet"
-  | "shard_cyan"
-  | "shard_pink"
-  | "title_pathfinder"
-  | "title_nocturnal"
-  | "aura_violet"
-  | "aura_gold"
-  | "frame_obsidian"
-  | "title_wanderer"
-  | "extra_freeze"
-  | "quest_reroll"
-  | "xp_potion"
-  | "chest_key"
-  | "trophy_first_boss"
-  | "crown_eternal";
-
-export type InventoryEntry = {
-  itemId: ItemId;
-  count: number;
-  acquired_at: string;
-};
-
-export type DropEvent = {
-  id: string;
-  itemId: ItemId;
-  rarity: Rarity;
-  ts: string;
-};
-
 export type HabitFrequency = "daily" | "weekly_n" | "custom_days";
 
 export type Habit = {
@@ -221,8 +126,8 @@ export type Habit = {
   description: string;
   frequency: HabitFrequency;
   target_per_week: number;
-  days_of_week?: number[]; // 0=Sun..6=Sat for custom_days
-  xp_per_completion: number;
+  days_of_week?: number[];
+  xp_per_completion: number; // deprecated, kept for data compat
   linked_kgi?: string;
   linked_boss?: string;
   color: string;
@@ -250,62 +155,4 @@ export type Boss = {
   target_date: string;
   damage_per_habit: number;
   unlocks_after?: string;
-};
-
-export type AchievementId =
-  | "first_task"
-  | "level_2"
-  | "level_3"
-  | "level_4"
-  | "level_5"
-  | "level_10"
-  | "level_15"
-  | "level_20"
-  | "chest_streak_7"
-  | "chest_streak_30"
-  | "golden_ticket"
-  | "quest_master"
-  | "frozen_saved"
-  | "perfect_day"
-  | "perfect_week"
-  | "perfect_month"
-  | "steel_7"
-  | "steel_30"
-  | "steel_60"
-  | "steel_180"
-  | "steel_365"
-  | "content_100"
-  | "polyglot_100h"
-  | "athlete_50"
-  | "outreach_master"
-  | "clean_week_sugar"
-  | "clean_month_sugar"
-  | "boss_naym"
-  | "boss_bali"
-  | "boss_telo"
-  | "boss_product"
-  | "tasks_10"
-  | "tasks_50"
-  | "tasks_100"
-  | "weight_minus_5"
-  | "weight_minus_10"
-  | "weight_target"
-  | "reviews_4"
-  | "reviews_12"
-  | "subscribers_500"
-  | "subscribers_3000"
-  | "income_6k"
-  | "income_8k"
-  | "english_b2"
-  | "first_review"
-  | "first_habit"
-  | "marathon_30"
-  | "clean_inbox"
-  | "committed_3_days"
-  | "recovery_done"
-  | "planned_week";
-
-export type AchievementSnapshot = {
-  id: AchievementId;
-  unlocked_at: string;
 };

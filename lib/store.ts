@@ -3,27 +3,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
-  AchievementId,
-  AchievementSnapshot,
-  ChestReward,
   DailyJournal,
   DailyPlan,
-  DailyQuestsSnapshot,
-  DailyXPEntry,
-  DropEvent,
   Effort,
   EffortLog,
   EnergyLevel,
   Habit,
   HabitLog,
   Insight,
-  InventoryEntry,
-  ItemId,
   KGI,
   Status,
   Step,
-  TalentId,
-  TalentRank,
   Task,
   WeeklyReview,
   WeightEntry,
@@ -36,12 +26,6 @@ import {
   initialTasks,
 } from "./initial-data";
 import { uuid } from "./utils";
-import { habitStreak } from "./habits-logic";
-import { addDailyXP } from "./daily-xp";
-import { generateQuestsForDate } from "./quests";
-import { computeModifiers, costFor, getTalent } from "./talents";
-import { DROP_CHANCE, getItem, rollLoot } from "./loot";
-import { levelFromXP } from "./xp";
 
 type State = {
   kgis: KGI[];
@@ -51,33 +35,14 @@ type State = {
   weightEntries: WeightEntry[];
   habits: Habit[];
   habitLogs: HabitLog[];
-  xp: number;
-  achievements: AchievementSnapshot[];
-  lastIntroDate: string | null;
-  snoozesUsedDate: string | null;
-  snoozesUsedCount: number;
   journals: DailyJournal[];
   insights: Insight[];
   activeTimerTaskId: string | null;
   activeTimerStartedAt: string | null;
-  // v5 dopamine
-  dailyXPGoal: number;
-  dailyXPHistory: DailyXPEntry[];
-  lastChestOpened: string | null;
-  chestStreak: number;
-  totalChestsOpened: number;
-  chestHistory: ChestReward[];
-  dailyQuests: DailyQuestsSnapshot[];
-  streakFreezes: number;
-  streakFreezesEarned: number;
-  talentPoints: number;
-  talentPointsEarned: number;
-  talents: TalentRank[];
-  inventory: InventoryEntry[];
-  recentDrops: DropEvent[];
-  lastLevelClaimed: number;
+  snoozesUsedDate: string | null;
+  snoozesUsedCount: number;
   accountStartDate: string | null;
-  // v7 — focus / ritual / efforts / inbox
+  vision: string;
   dailyPlans: DailyPlan[];
   efforts: Effort[];
   effortLogs: EffortLog[];
@@ -86,7 +51,6 @@ type State = {
   preferredEnergyAfternoon: EnergyLevel;
   preferredEnergyEvening: EnergyLevel;
   inboxTasks: string[];
-  vision: string;
 
   setKGI: (id: string, current_value: number | string) => void;
   setTaskStatus: (id: string, status: Status) => void;
@@ -110,27 +74,15 @@ type State = {
   deleteHabit: (id: string) => void;
   updateHabit: (id: string, patch: Partial<Habit>) => void;
 
-  addXP: (amount: number) => void;
-  unlockAchievement: (id: AchievementId) => void;
-  markIntroSeen: () => void;
   addJournal: (journal: Omit<DailyJournal, "id" | "created_at">) => void;
   updateJournal: (id: string, patch: Partial<DailyJournal>) => void;
   deleteJournal: (id: string) => void;
+
   addInsight: (insight: Omit<Insight, "id" | "created_at">) => void;
   deleteInsight: (id: string) => void;
+
   startTimer: (task_id: string) => void;
   stopTimer: () => void;
-
-  openDailyChest: () => ChestReward | null;
-  completeQuest: (questId: string) => void;
-  ensureQuestsForToday: () => void;
-
-  spendTalent: (id: TalentId) => boolean;
-  refundTalent: (id: TalentId) => boolean;
-  consumeRecentDrop: (id: string) => void;
-  useItem: (itemId: ItemId) => boolean;
-  awardItem: (itemId: ItemId) => void;
-  claimLevelRewards: () => void;
 
   commitTasksForToday: (
     taskIds: string[],
@@ -161,72 +113,6 @@ const STATUS_CYCLE: Record<Status, Status> = {
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const nowISO = () => new Date().toISOString();
 
-function streakMultiplier(streak: number, boost: number = 0): number {
-  if (streak >= 30) return 1.5 + boost;
-  if (streak >= 7) return 1.25 + boost;
-  if (streak >= 3) return 1.1 + boost;
-  return 1.0;
-}
-
-function rollLootAndRecord(
-  state: State,
-  baseChance: number,
-  source: string
-): { inventory: InventoryEntry[]; recentDrops: DropEvent[] } | null {
-  const mods = computeModifiers(state.talents);
-  const effective = baseChance + mods.lootDropBonus;
-  const itemId = rollLoot(effective, mods.lootQualityShift);
-  if (!itemId) return null;
-  const existing = state.inventory.find((i) => i.itemId === itemId);
-  const ts = new Date().toISOString();
-  const inv: InventoryEntry[] = existing
-    ? state.inventory.map((i) =>
-        i.itemId === itemId ? { ...i, count: i.count + 1, acquired_at: ts } : i
-      )
-    : [...state.inventory, { itemId, count: 1, acquired_at: ts }];
-  // import getItem dynamically to avoid circular — we'll resolve rarity via items list ID prefix lookup later
-  const it = getItem(itemId);
-  const drop: DropEvent = {
-    id: uuid(),
-    itemId,
-    rarity: it?.rarity ?? "common",
-    ts,
-  };
-  return {
-    inventory: inv,
-    recentDrops: [drop, ...state.recentDrops].slice(0, 12),
-  };
-}
-
-const CHEST_TIERS: Array<{ tier: ChestReward["tier"]; xp: number }> = [
-  { tier: "common", xp: 15 },
-  { tier: "uncommon", xp: 40 },
-  { tier: "rare", xp: 100 },
-  { tier: "epic", xp: 300 },
-  { tier: "legendary", xp: 1000 },
-];
-
-function rollChest(
-  tierShift: number = 0,
-  guaranteeMinIdx: number = 0
-): ChestReward {
-  const r = Math.random();
-  let idx = 0;
-  if (r < 0.6) idx = 0;
-  else if (r < 0.85) idx = 1;
-  else if (r < 0.95) idx = 2;
-  else if (r < 0.99) idx = 3;
-  else idx = 4;
-  if (tierShift > 0 && Math.random() < tierShift && idx < CHEST_TIERS.length - 1) {
-    idx += 1;
-  }
-  if (guaranteeMinIdx > 0 && idx < guaranteeMinIdx) {
-    idx = guaranteeMinIdx;
-  }
-  const t = CHEST_TIERS[idx];
-  return { tier: t.tier, xp: t.xp, date: todayISO() };
-}
-
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
@@ -237,33 +123,15 @@ export const useStore = create<State>()(
       weightEntries: [],
       habits: initialHabits,
       habitLogs: [],
-      xp: 0,
-      achievements: [],
-      lastIntroDate: null,
-      snoozesUsedDate: null,
-      snoozesUsedCount: 0,
       journals: [],
       insights: [],
       activeTimerTaskId: null,
       activeTimerStartedAt: null,
-
-      dailyXPGoal: 30,
-      dailyXPHistory: [],
-      lastChestOpened: null,
-      chestStreak: 0,
-      totalChestsOpened: 0,
-      chestHistory: [],
-      dailyQuests: [],
-      streakFreezes: 0,
-      streakFreezesEarned: 0,
-      talentPoints: 0,
-      talentPointsEarned: 0,
-      talents: [],
-      inventory: [],
-      recentDrops: [],
-      lastLevelClaimed: 1,
+      snoozesUsedDate: null,
+      snoozesUsedCount: 0,
       accountStartDate: new Date().toISOString().slice(0, 10),
-
+      vision:
+        "К свободе через систему — Бали, $6000/мес, B2 English, форма 92 кг",
       dailyPlans: [],
       efforts: initialEfforts,
       effortLogs: [],
@@ -272,14 +140,10 @@ export const useStore = create<State>()(
       preferredEnergyAfternoon: "medium",
       preferredEnergyEvening: "low",
       inboxTasks: [],
-      vision:
-        "К свободе через систему — Бали, $6000/мес, B2 English, форма 92 кг",
 
       setKGI: (id, current_value) =>
         set((s) => ({
-          kgis: s.kgis.map((k) =>
-            k.id === id ? { ...k, current_value } : k
-          ),
+          kgis: s.kgis.map((k) => (k.id === id ? { ...k, current_value } : k)),
         })),
 
       setTaskStatus: (id, status) =>
@@ -294,33 +158,18 @@ export const useStore = create<State>()(
                     status === "in_progress" && !t.started_at
                       ? nowISO()
                       : t.started_at,
+                  is_today_committed:
+                    status === "done" ? false : t.is_today_committed,
                 }
               : t
           ),
         })),
 
       cycleTaskStatus: (id) =>
-        set((s) => {
-          const mods = computeModifiers(s.talents);
-          let xpDelta = 0;
-          let rolledLoot = false;
-          const tasks = s.tasks.map((t) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) => {
             if (t.id !== id) return t;
             const next = STATUS_CYCLE[t.status];
-            if (t.status !== "done" && next === "done") {
-              const base = t.xp ?? 25;
-              const sec = t.time_spent_sec ?? 0;
-              const focusBonus = sec >= 25 * 60 ? mods.focusBonus : 0;
-              const deepBonus = sec >= 60 * 60 ? mods.deepFocusBonus : 0;
-              xpDelta += Math.round(
-                base *
-                  mods.taskXPMult *
-                  mods.allXPMult *
-                  (1 + focusBonus + deepBonus)
-              );
-              rolledLoot = true;
-            }
-            if (t.status === "done" && next !== "done") xpDelta -= t.xp ?? 25;
             return {
               ...t,
               status: next,
@@ -332,20 +181,8 @@ export const useStore = create<State>()(
               is_today_committed:
                 next === "done" ? false : t.is_today_committed,
             };
-          });
-          const loot = rolledLoot
-            ? rollLootAndRecord(s, DROP_CHANCE.task, "task")
-            : null;
-          return {
-            tasks,
-            xp: Math.max(0, s.xp + xpDelta),
-            dailyXPHistory:
-              xpDelta > 0
-                ? addDailyXP(s.dailyXPHistory, xpDelta)
-                : s.dailyXPHistory,
-            ...(loot ?? {}),
-          };
-        }),
+          }),
+        })),
 
       updateTask: (id, patch) =>
         set((s) => ({
@@ -360,7 +197,6 @@ export const useStore = create<State>()(
               ...task,
               id: task.id ?? `${task.step_id}.${uuid().slice(0, 4)}`,
               status: task.status ?? "todo",
-              xp: task.xp ?? 25,
             } as Task,
           ],
         })),
@@ -380,46 +216,19 @@ export const useStore = create<State>()(
         })),
 
       completeTask: (id) =>
-        set((s) => {
-          const mods = computeModifiers(s.talents);
-          let xpDelta = 0;
-          let rolledLoot = false;
-          const tasks = s.tasks.map((t) => {
-            if (t.id !== id) return t;
-            if (t.status !== "done") {
-              const base = t.xp ?? 25;
-              const sec = t.time_spent_sec ?? 0;
-              const focusBonus = sec >= 25 * 60 ? mods.focusBonus : 0;
-              const deepBonus = sec >= 60 * 60 ? mods.deepFocusBonus : 0;
-              xpDelta += Math.round(
-                base *
-                  mods.taskXPMult *
-                  mods.allXPMult *
-                  (1 + focusBonus + deepBonus)
-              );
-              rolledLoot = true;
-            }
-            return {
-              ...t,
-              status: "done" as Status,
-              completed_at: nowISO(),
-              snoozed_until: undefined,
-              is_today_committed: false,
-            };
-          });
-          const loot = rolledLoot
-            ? rollLootAndRecord(s, DROP_CHANCE.task, "task")
-            : null;
-          return {
-            tasks,
-            xp: s.xp + xpDelta,
-            dailyXPHistory:
-              xpDelta > 0
-                ? addDailyXP(s.dailyXPHistory, xpDelta)
-                : s.dailyXPHistory,
-            ...(loot ?? {}),
-          };
-        }),
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  status: "done" as Status,
+                  completed_at: nowISO(),
+                  snoozed_until: undefined,
+                  is_today_committed: false,
+                }
+              : t
+          ),
+        })),
 
       deleteTask: (id) =>
         set((s) => ({
@@ -448,7 +257,7 @@ export const useStore = create<State>()(
       addReview: (review) =>
         set((s) => {
           const newReview: WeeklyReview = { ...review, id: uuid() };
-          const next: State["weightEntries"] = [...s.weightEntries];
+          const next: WeightEntry[] = [...s.weightEntries];
           let kgis = s.kgis;
           if (review.weight_kg != null && !Number.isNaN(review.weight_kg)) {
             next.push({ date: review.date, weight_kg: review.weight_kg });
@@ -458,13 +267,10 @@ export const useStore = create<State>()(
                 : k
             );
           }
-          const gain = 100;
           return {
             reviews: [newReview, ...s.reviews],
             weightEntries: next,
             kgis,
-            xp: s.xp + gain,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, gain),
           };
         }),
 
@@ -482,33 +288,18 @@ export const useStore = create<State>()(
           const existing = s.habitLogs.find(
             (l) => l.habit_id === habit_id && l.date === d
           );
-          const habit = s.habits.find((h) => h.id === habit_id);
           if (existing) {
             return {
               habitLogs: s.habitLogs.filter((l) => l.id !== existing.id),
-              xp: Math.max(0, s.xp - (habit?.xp_per_completion ?? 0)),
             };
           }
-          const mods = computeModifiers(s.talents);
-          const streak = habitStreak(s.habitLogs, habit_id, new Date(d));
-          const mult = streakMultiplier(streak, mods.streakMultBoost);
-          const base = habit?.xp_per_completion ?? 0;
-          const earned = Math.round(
-            base * mult * mods.habitXPMult * mods.allXPMult
-          );
           const newLog: HabitLog = {
             id: uuid(),
             habit_id,
             date: d,
             completed_at: nowISO(),
           };
-          const loot = rollLootAndRecord(s, DROP_CHANCE.habit, "habit");
-          return {
-            habitLogs: [...s.habitLogs, newLog],
-            xp: s.xp + earned,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, earned),
-            ...(loot ?? {}),
-          };
+          return { habitLogs: [...s.habitLogs, newLog] };
         }),
 
       addHabitLog: (log) =>
@@ -559,43 +350,13 @@ export const useStore = create<State>()(
           habits: s.habits.map((h) => (h.id === id ? { ...h, ...patch } : h)),
         })),
 
-      addXP: (amount) =>
-        set((s) => ({
-          xp: Math.max(0, s.xp + amount),
-          dailyXPHistory:
-            amount > 0 ? addDailyXP(s.dailyXPHistory, amount) : s.dailyXPHistory,
-        })),
-
-      unlockAchievement: (id) =>
-        set((s) => {
-          if (s.achievements.some((a) => a.id === id)) return {};
-          // find reward_xp from ACHIEVEMENTS at call site, but here we lock to 100 default
-          // Caller-driven: ACHIEVEMENTS list determines reward, but here a base bonus
-          const bonus = 100;
-          return {
-            achievements: [
-              ...s.achievements,
-              { id, unlocked_at: nowISO() },
-            ],
-            xp: s.xp + bonus,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, bonus),
-          };
-        }),
-
-      markIntroSeen: () => set({ lastIntroDate: todayISO() }),
-
       addJournal: (j) =>
-        set((s) => {
-          const gain = 30;
-          return {
-            journals: [
-              { ...j, id: uuid(), created_at: nowISO() },
-              ...s.journals,
-            ],
-            xp: s.xp + gain,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, gain),
-          };
-        }),
+        set((s) => ({
+          journals: [
+            { ...j, id: uuid(), created_at: nowISO() },
+            ...s.journals,
+          ],
+        })),
 
       updateJournal: (id, patch) =>
         set((s) => ({
@@ -610,17 +371,12 @@ export const useStore = create<State>()(
         })),
 
       addInsight: (ins) =>
-        set((s) => {
-          const gain = 10;
-          return {
-            insights: [
-              { ...ins, id: uuid(), created_at: nowISO() },
-              ...s.insights,
-            ],
-            xp: s.xp + gain,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, gain),
-          };
-        }),
+        set((s) => ({
+          insights: [
+            { ...ins, id: uuid(), created_at: nowISO() },
+            ...s.insights,
+          ],
+        })),
 
       deleteInsight: (id) =>
         set((s) => ({
@@ -646,217 +402,9 @@ export const useStore = create<State>()(
           activeTimerStartedAt: null,
           tasks: s.tasks.map((t) =>
             t.id === s.activeTimerTaskId
-              ? {
-                  ...t,
-                  time_spent_sec: (t.time_spent_sec ?? 0) + elapsedSec,
-                }
+              ? { ...t, time_spent_sec: (t.time_spent_sec ?? 0) + elapsedSec }
               : t
           ),
-        });
-      },
-
-      openDailyChest: () => {
-        const s = get();
-        const today = todayISO();
-        if (s.lastChestOpened === today) return null;
-        const mods = computeModifiers(s.talents);
-        const nextChestOrdinal = s.totalChestsOpened + 1;
-        const guaranteed =
-          mods.chestGuaranteePeriod > 0 &&
-          nextChestOrdinal % mods.chestGuaranteePeriod === 0
-            ? 2 // index of "rare"
-            : 0;
-        const reward = rollChest(mods.chestTierShift, guaranteed);
-        let bonus: ChestReward | null = null;
-        if (mods.chestDoubleChance > 0 && Math.random() < mods.chestDoubleChance) {
-          bonus = rollChest(mods.chestTierShift);
-        }
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yISO = yesterday.toISOString().slice(0, 10);
-        const newStreak = s.lastChestOpened === yISO ? s.chestStreak + 1 : 1;
-        const totalXP = reward.xp + (bonus?.xp ?? 0);
-        set({
-          lastChestOpened: today,
-          chestStreak: newStreak,
-          totalChestsOpened: s.totalChestsOpened + 1 + (bonus ? 1 : 0),
-          chestHistory: [
-            ...(bonus ? [bonus] : []),
-            reward,
-            ...s.chestHistory,
-          ].slice(0, 30),
-          xp: s.xp + totalXP,
-          dailyXPHistory: addDailyXP(s.dailyXPHistory, totalXP),
-        });
-        return reward;
-      },
-
-      ensureQuestsForToday: () => {
-        const s = get();
-        const today = todayISO();
-        if (s.dailyQuests.find((q) => q.date === today)) return;
-        const mods = computeModifiers(s.talents);
-        const quests = generateQuestsForDate(today, mods.extraQuest);
-        set({
-          dailyQuests: [
-            { date: today, quests, rewarded: false },
-            ...s.dailyQuests,
-          ].slice(0, 30),
-        });
-      },
-
-      completeQuest: (questId) =>
-        set((s) => {
-          const today = todayISO();
-          const snap = s.dailyQuests.find((q) => q.date === today);
-          if (!snap) return {};
-          const updated = snap.quests.map((q) =>
-            q.id === questId ? { ...q, completed: true } : q
-          );
-          const allDone = updated.every((q) => q.completed);
-          const mods = computeModifiers(s.talents);
-          const bonus =
-            allDone && !snap.rewarded
-              ? Math.round(50 * mods.questCompletionMult)
-              : 0;
-          return {
-            dailyQuests: s.dailyQuests.map((d) =>
-              d.date === today
-                ? { ...d, quests: updated, rewarded: snap.rewarded || allDone }
-                : d
-            ),
-            xp: bonus > 0 ? s.xp + bonus : s.xp,
-            dailyXPHistory:
-              bonus > 0 ? addDailyXP(s.dailyXPHistory, bonus) : s.dailyXPHistory,
-          };
-        }),
-
-      spendTalent: (id) => {
-        const s = get();
-        const def = getTalent(id);
-        if (!def) return false;
-        const cost = costFor(def.tier);
-        if (s.talentPoints < cost) return false;
-        const existing = s.talents.find((t) => t.id === id);
-        const rank = existing?.rank ?? 0;
-        if (rank >= def.maxRank) return false;
-        const nextTalents = existing
-          ? s.talents.map((t) =>
-              t.id === id ? { ...t, rank: rank + 1 } : t
-            )
-          : [...s.talents, { id, rank: 1 }];
-        set({
-          talents: nextTalents,
-          talentPoints: s.talentPoints - cost,
-        });
-        return true;
-      },
-
-      refundTalent: (id) => {
-        const s = get();
-        const def = getTalent(id);
-        if (!def) return false;
-        const existing = s.talents.find((t) => t.id === id);
-        if (!existing || existing.rank <= 0) return false;
-        const refund = costFor(def.tier);
-        const nextTalents = s.talents
-          .map((t) =>
-            t.id === id ? { ...t, rank: t.rank - 1 } : t
-          )
-          .filter((t) => t.rank > 0);
-        set({
-          talents: nextTalents,
-          talentPoints: s.talentPoints + refund,
-        });
-        return true;
-      },
-
-      consumeRecentDrop: (id) =>
-        set((s) => ({
-          recentDrops: s.recentDrops.filter((d) => d.id !== id),
-        })),
-
-      awardItem: (itemId) =>
-        set((s) => {
-          const existing = s.inventory.find((i) => i.itemId === itemId);
-          const ts = nowISO();
-          const inv: InventoryEntry[] = existing
-            ? s.inventory.map((i) =>
-                i.itemId === itemId
-                  ? { ...i, count: i.count + 1, acquired_at: ts }
-                  : i
-              )
-            : [...s.inventory, { itemId, count: 1, acquired_at: ts }];
-          return { inventory: inv };
-        }),
-
-      useItem: (itemId) => {
-        const s = get();
-        const entry = s.inventory.find((i) => i.itemId === itemId);
-        if (!entry || entry.count <= 0) return false;
-        const dec = (): InventoryEntry[] =>
-          s.inventory
-            .map((i) =>
-              i.itemId === itemId ? { ...i, count: i.count - 1 } : i
-            )
-            .filter((i) => i.count > 0);
-        switch (itemId) {
-          case "extra_freeze":
-            set({
-              streakFreezes: Math.min(5, s.streakFreezes + 1),
-              streakFreezesEarned: s.streakFreezesEarned + 1,
-              inventory: dec(),
-            });
-            return true;
-          case "quest_reroll": {
-            const today = todayISO();
-            const mods = computeModifiers(s.talents);
-            const quests = generateQuestsForDate(
-              today + "-r" + Math.random().toString(36).slice(2, 6),
-              mods.extraQuest
-            );
-            set({
-              dailyQuests: [
-                { date: today, quests, rewarded: false },
-                ...s.dailyQuests.filter((q) => q.date !== today),
-              ].slice(0, 30),
-              inventory: dec(),
-            });
-            return true;
-          }
-          case "xp_potion":
-            set({
-              xp: s.xp + 200,
-              dailyXPHistory: addDailyXP(s.dailyXPHistory, 200),
-              inventory: dec(),
-            });
-            return true;
-          case "chest_key": {
-            const mods = computeModifiers(s.talents);
-            const reward = rollChest(mods.chestTierShift);
-            set({
-              chestHistory: [reward, ...s.chestHistory].slice(0, 30),
-              totalChestsOpened: s.totalChestsOpened + 1,
-              xp: s.xp + reward.xp,
-              dailyXPHistory: addDailyXP(s.dailyXPHistory, reward.xp),
-              inventory: dec(),
-            });
-            return true;
-          }
-          default:
-            return false;
-        }
-      },
-
-      claimLevelRewards: () => {
-        const s = get();
-        const curLevel = levelFromXP(s.xp).num;
-        if (curLevel <= s.lastLevelClaimed) return;
-        const points = curLevel - s.lastLevelClaimed;
-        set({
-          talentPoints: s.talentPoints + points,
-          talentPointsEarned: s.talentPointsEarned + points,
-          lastLevelClaimed: curLevel,
         });
       },
 
@@ -864,8 +412,7 @@ export const useStore = create<State>()(
         set((s) => {
           const today = todayISO();
           const ts = nowISO();
-          const limit = 3;
-          const ids = taskIds.slice(0, limit);
+          const ids = taskIds.slice(0, 3);
           const plan: DailyPlan = {
             date: today,
             committed_task_ids: ids,
@@ -873,7 +420,6 @@ export const useStore = create<State>()(
             intent,
             created_at: ts,
           };
-          const reward = 5 * ids.length;
           return {
             dailyPlans: [
               plan,
@@ -888,8 +434,6 @@ export const useStore = create<State>()(
               }
               return t;
             }),
-            xp: s.xp + reward,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
           };
         }),
 
@@ -913,10 +457,7 @@ export const useStore = create<State>()(
         set((s) => {
           const today = todayISO();
           const existing = s.dailyPlans.find((p) => p.date === today);
-          const reward = 20;
           if (!existing) {
-            // No morning ritual was done — create a minimal record so the
-            // evening reflection still has a home.
             const ts = nowISO();
             return {
               dailyPlans: [
@@ -929,8 +470,6 @@ export const useStore = create<State>()(
                 },
                 ...s.dailyPlans,
               ].slice(0, 60),
-              xp: s.xp + reward,
-              dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
             };
           }
           return {
@@ -939,30 +478,21 @@ export const useStore = create<State>()(
                 ? { ...p, reflection, finalized_at: nowISO() }
                 : p
             ),
-            xp: s.xp + reward,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
           };
         }),
 
       logEffort: (effortId, date) =>
-        set((s) => {
-          const ef = s.efforts.find((e) => e.id === effortId);
-          if (!ef) return {};
-          const reward = ef.xp_per_unit;
-          return {
-            effortLogs: [
-              ...s.effortLogs,
-              {
-                id: uuid(),
-                effort_id: effortId,
-                date: date ?? todayISO(),
-                completed_at: nowISO(),
-              },
-            ],
-            xp: s.xp + reward,
-            dailyXPHistory: addDailyXP(s.dailyXPHistory, reward),
-          };
-        }),
+        set((s) => ({
+          effortLogs: [
+            ...s.effortLogs,
+            {
+              id: uuid(),
+              effort_id: effortId,
+              date: date ?? todayISO(),
+              completed_at: nowISO(),
+            },
+          ],
+        })),
 
       unlogEffort: (logId) =>
         set((s) => ({
@@ -998,10 +528,12 @@ export const useStore = create<State>()(
           ),
         })),
 
-      setVision: (vision) => set({ vision: vision.trim().slice(0, 240) }),
-
       setDailyCapacity: (hours) =>
-        set({ dailyCapacityHours: Math.max(1, Math.min(16, Math.round(hours))) }),
+        set({
+          dailyCapacityHours: Math.max(1, Math.min(16, Math.round(hours))),
+        }),
+
+      setVision: (vision) => set({ vision: vision.trim().slice(0, 240) }),
 
       resetData: () =>
         set({
@@ -1012,30 +544,12 @@ export const useStore = create<State>()(
           weightEntries: [],
           habits: initialHabits,
           habitLogs: [],
-          xp: 0,
-          achievements: [],
-          lastIntroDate: null,
-          snoozesUsedDate: null,
-          snoozesUsedCount: 0,
           journals: [],
           insights: [],
           activeTimerTaskId: null,
           activeTimerStartedAt: null,
-          dailyXPGoal: 30,
-          dailyXPHistory: [],
-          lastChestOpened: null,
-          chestStreak: 0,
-          totalChestsOpened: 0,
-          chestHistory: [],
-          dailyQuests: [],
-          streakFreezes: 0,
-          streakFreezesEarned: 0,
-          talentPoints: 0,
-          talentPointsEarned: 0,
-          talents: [],
-          inventory: [],
-          recentDrops: [],
-          lastLevelClaimed: 1,
+          snoozesUsedDate: null,
+          snoozesUsedCount: 0,
           accountStartDate: new Date().toISOString().slice(0, 10),
           dailyPlans: [],
           efforts: initialEfforts,
@@ -1050,17 +564,15 @@ export const useStore = create<State>()(
         }),
     }),
     {
-      name: "operator-store-v10",
-      version: 10,
-      migrate: (persisted: unknown, _version: number) => {
-        // Backfill v10 fields on existing v9 payloads so logging in on
-        // an older client doesn't crash with undefined arrays / null
-        // estimated_days.
+      name: "operator-store-v11",
+      version: 11,
+      migrate: (persisted: unknown) => {
         if (!persisted || typeof persisted !== "object") return persisted;
         const state = persisted as Record<string, unknown>;
         const inferDays = (t: Task) => {
-          if ((t.xp ?? 25) >= 75) return 7;
-          if ((t.xp ?? 25) >= 50) return 3;
+          const xp = (t as Task & { xp?: number }).xp ?? 25;
+          if (xp >= 75) return 7;
+          if (xp >= 50) return 3;
           return 1;
         };
         if (Array.isArray(state.tasks)) {
@@ -1072,16 +584,15 @@ export const useStore = create<State>()(
         if (!state.efforts) state.efforts = initialEfforts;
         if (!state.effortLogs) state.effortLogs = [];
         if (!state.dailyCapacityHours) state.dailyCapacityHours = 4;
-        if (!state.preferredEnergyMorning)
-          state.preferredEnergyMorning = "high";
+        if (!state.preferredEnergyMorning) state.preferredEnergyMorning = "high";
         if (!state.preferredEnergyAfternoon)
           state.preferredEnergyAfternoon = "medium";
-        if (!state.preferredEnergyEvening)
-          state.preferredEnergyEvening = "low";
+        if (!state.preferredEnergyEvening) state.preferredEnergyEvening = "low";
         if (!state.inboxTasks) state.inboxTasks = [];
         if (!state.vision)
           state.vision =
             "К свободе через систему — Бали, $6000/мес, B2 English, форма 92 кг";
+        // удаляем deprecated геймификационные поля — zustand persist их игнорирует
         return state;
       },
     }

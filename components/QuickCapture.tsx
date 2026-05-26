@@ -208,9 +208,9 @@ function Menu({
     },
     {
       icon: BookOpen,
-      label: "Начать ревью",
-      sub: "Откроет форму weekly review",
-      action: () => closeAndGo("/review"),
+      label: "Отчёт за день",
+      sub: "Откроет страницу журнала",
+      action: () => closeAndGo("/journal"),
     },
   ];
 
